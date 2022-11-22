@@ -26,7 +26,7 @@ class TimetableStorage():
         """)
         self.connection.commit()
         
-        self.cursor.execute(f"SELECT * FROM {table} WHERE Monday!=NULL")
+        self.cursor.execute(f"SELECT * FROM {table} WHERE Monday NOT NULL")
         result = self.cursor.fetchone()
         self.connection.commit()
 
@@ -56,15 +56,15 @@ class TimetableStorage():
     def append_day(self, day: datetime): # -> UserStorage
 
         try:
-            column_name = f'"{day.day}.{day.month}.{day.year}"'
-
+            column_name = f'special_{day.day}_{day.month}_{day.year}'
             self.cursor.execute(f"ALTER TABLE {self.table} ADD COLUMN {column_name} TEXT")    
             self.connection.commit()
             # return
         
             for i in ('9:00', '45', '10', '45', '10', '45', '20', '45', '20', '45', '10', '45', '10', '45', '10'):
-                self.cursor.execute(f"INSERT INTO {self.table}({column_name}) VALUES(" + '"' + i + '"' + ")") #!
-                self.connection.commit()
+                self.cursor.execute(f"UPDATE {self.table}({column_name}) ?", [i]) #!
+            
+            self.connection.commit()
 
         except sqlite3.IntegrityError:
             print("User already exits!")
@@ -93,6 +93,5 @@ class TimetableStorage():
         self.cursor.execute(f"SELECT * FROM {self.table} WHERE userid=?", [id])
         content = self.cursor.fetchone()
         self.connection.commit()
-        print(content is not None)
         return content is not None
 

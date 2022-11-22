@@ -1,4 +1,5 @@
 from datetime import datetime
+import calendar
 import os
 import sys
 
@@ -13,5 +14,11 @@ def get_timetable(message):
     print(timetables.deserialize())
 
 def add_unique_day(message):
+    day = message.text.split()[1]
+
+    if day.count('.') != 2: return
+
+    dmy = day.split('.')
+    date = datetime(int(dmy[2]), int(dmy[1]), int(dmy[0]))
     timetables = TimetableStorage('timetable')
-    timetables.append_day(datetime.now())
+    timetables.append_day(date)
