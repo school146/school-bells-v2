@@ -1,55 +1,64 @@
 import os
+import sqlite3
 
 class UserStorage():
-    file = None
-    path : str
+    table : str
+    connection = None
+    cursor = None
 
-    def __init__(self, path: str):
-        self.path = path
+    def __init__(self, table: str):
+        self.table = table
         
-        permissions = 'r+'
-        if not os.path.isfile(self.path):
-            permissions = 'w+'
+        self.connection = sqlite3.connect(f'database.db')
+        self.cursor = self.connection.cursor()
 
-        self.file = open(self.path, permissions)
-        if self.file.read() == '': 
-            self.file.write('[]')
-        self.file.close()
+        self.cursor.execute(f"""
+        CREATE TABLE IF NOT EXISTS {self.table} (
+            userid TEXT UNIQUE
+        ) 
+        """)
+        self.connection.commit()
+        
 
     def deserialize(self) -> object:
-        self.file = open(self.path, 'r')
-        content = self.file.read()
-        self.file.close()
+        self.cursor.execute(f"SELECT * FROM {self.table}")
+        content = self.cursor.fetchone()
+        self.connection.commit()
 
-        return content.replace('[', '').replace(']', '').replace(',', '').replace('\'', '').split()
+        return content
 
     def append_user(self, id): # -> UserStorage
-        users = self.deserialize()
         id = str(id).replace('@', '').lower()
 
-        if str(id) not in users:
-            users.append(id)
+        try:
+            self.cursor.execute(f"""
+                INSERT INTO {self.table} VALUES(?)
+            """, [id])    
 
-        self.file = open(self.path, 'w')
-        self.file.write(str(users))
-        self.file.close()
-
+        except sqlite3.IntegrityError:
+            print("User already exits!")
+        
+        self.connection.commit()
         return self
 
     def remove_user(self, id):
-        users = self.deserialize()
         id = str(id).replace('@', '').lower()
 
-        if id in users:
-            del users[users.index(id)]
+        try:
+            self.cursor.execute(f"""
+                DELETE FROM {self.table} WHERE userid=?;
+            """, [id])    
+            self.connection.commit()
 
-        self.file = open(self.path, 'w')
-        self.file.write(str(users))
-        self.file.close()
-
+        except:
+            print("User doesn't exist!")
+        
         return self
 
     def contains(self, id: str):
-        users = self.deserialize()
-        return id in users
+        self.cursor.execute(f"SELECT * FROM {self.table} WHERE userid=?", [id])
+        content = self.cursor.fetchone()
+        self.connection.commit()
+        print(content is not None)
+        return content is not None
 

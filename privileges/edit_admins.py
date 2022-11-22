@@ -4,13 +4,14 @@ from users.user_storage import *
 from logging_features.previledge_logger import *
 
 def add(bot: TeleBot, message):
-    admins = UserStorage('admins.txt').append_user('ncinsli')
+    admins = UserStorage('admins').append_user('ncinsli')
     
-    target = message.text.replace(' ', '')[len('/add_admin'):].replace('@', '')
-
-    if target == '':
+    if ' ' not in message.text:
         bot.reply_to(message, 'Если Вы хотите добавить администратора, Вы должны указать его имя пользователя или Telegram ID')
         return
+    
+    target = message.text.split()[1].replace('@', '')
+
     
     if (validate.check(message, admins) and not admins.contains(target)):
         admins.append_user(target)
@@ -26,7 +27,7 @@ def add(bot: TeleBot, message):
         log_rejected_admin_adding(message.from_user.username, target, 'NO_SUCH_ADMIN')
 
 def remove(bot: TeleBot, message):
-    admins = UserStorage('admins.txt').append_user('ncinsli')
+    admins = UserStorage('admins').append_user('ncinsli')
     
     target = message.text.replace(' ', '')[len('/rm_admin'):].replace('@', '')
 
