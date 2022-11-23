@@ -35,11 +35,11 @@ def ring(message):
 @bot.message_handler(commands=["add_unique"])
 def add_unique(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        timetable.add_unique_day(message)
+        timetable.add_rule_shift(message)
 
 @bot.message_handler(commands=["get_timetable"])
 def get_timetable(message):
-    timetable.get_timetable(message)
+    timetable.get_timetable(bot, message)
 
 @bot.message_handler(commands=["about"])
 def about(message):

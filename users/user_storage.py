@@ -34,6 +34,7 @@ class UserStorage():
             self.cursor.execute(f"""
                 INSERT INTO {self.table} VALUES(?)
             """, [id])    
+            self.connection.commit()
 
         except sqlite3.IntegrityError:
             print("User already exits!")
