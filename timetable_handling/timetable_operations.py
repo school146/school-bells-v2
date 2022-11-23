@@ -22,7 +22,7 @@ def get_timetable(bot: TeleBot, message):
     print(dmy)
     date = datetime(int(dmy[0]), int(dmy[1]), int(dmy[2]))
     
-    list_db = TimetableStorage().get_day(date)
+    list_db = timetables.get_day(date)
     combined = []
 
     for i in range(0, len(list_db) - 1):
@@ -39,6 +39,7 @@ def get_timetable(bot: TeleBot, message):
 
 # /add_unique dd.mm.yyyy lesson 1 +20min
 def add_rule_shift(message):
+    
     decomposed = message.text.split()
     print(decomposed)
     day = int(decomposed[1].split('.')[0])
@@ -63,7 +64,7 @@ def add_rule_shift(message):
 
     if type == 'lesson':
         timetables = TimetableStorage()
-        timetables.append_ring_shift(date, EventType.LESSON, order * 2 - 1, delta_seconds)
+        timetables.append_ring_shift(date, EventType.LESSON, order * 2, delta_seconds)
     
     if type == 'break':
         timetables = TimetableStorage()

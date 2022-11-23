@@ -38,7 +38,13 @@ class TimetableStorage():
         """)
         self.connection.commit()
 
-        try:
+        self.cursor.execute(f"""SELECT * FROM {self.table}""")
+        length = len(self.cursor.fetchall())
+        self.connection.commit()
+
+        print(length)
+
+        if length == 0:
             self.add_default_bells('8:30', 0, 0, 0, 0, 0, 1, 0) #1
             self.add_default_bells('8:50', 1) #2
             self.add_default_bells('9:00', 0, 1, 1, 1, 1, 0, 0) #3
@@ -89,10 +95,6 @@ class TimetableStorage():
             self.add_default_bells('15:25', 1) #2
             self.add_default_bells('15:35', 0, 1, 1, 1, 1, 0, 0) #3
 
-        except Exception as exception:
-            print(exception)
-
-
         self.cursor.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table_override} (
             id INTEGER,
@@ -131,17 +133,19 @@ class TimetableStorage():
         hours = int(initial_time.split(':')[0])
         minutes = int(initial_time.split(':')[1])
         minutes -= seconds // 60
-        seconds = 60 - seconds
+        if seconds // 60 > 0:
+            seconds = 60 - seconds
 
         hours -= minutes // 60
-        minutes = 60 - minutes
+        if minutes // 60 > 0: 
+            minutes = 60 - minutes
 
         return f'{hours}:{str(minutes).zfill(2)}'
 
     def get_day(self, date: datetime):
         # weekday = calendar.day_name[day.weekday()]  #'Wednesday'
         self.cursor.execute(f"""
-            SELECT (time)
+            SELECT DISTINCT (time)
             FROM {self.table_override}
             WHERE day={date.day} 
                   AND month={date.month}
@@ -150,6 +154,7 @@ class TimetableStorage():
 
         content = self.cursor.fetchall()
         self.connection.commit()
+        print(" overrided content:", content)
         
         if content == []:
             columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
@@ -163,12 +168,13 @@ class TimetableStorage():
 
             content = self.cursor.fetchall()
             self.connection.commit()
-
+            # print("Overrided content:", content)
+    
         prepared_content = []
         
         for time in content:
             prepared_content.append(time[0])
-
+        # print(content)
         content = list(map(str, prepared_content))
 
         return content
@@ -182,12 +188,22 @@ class TimetableStorage():
         for time in default_timetable[order - 1:]:
             new_timetable.append(self.sum_times(time, delta_sec))
 
-        print(default_timetable)
-        print(new_timetable)
+        print('default', default_timetable)
+        print('new', new_timetable)
 
         try:
             dmy = f'{date.year}.{date.month}.{date.day}'
             
+            for ring_time in default_timetable:
+                self.cursor.execute(f"""
+                        DELETE FROM {self.table_override}
+                        WHERE year={date.year}
+                        AND month={date.month}
+                        AND day={date.day}
+                        AND time="{ring_time}"
+                    """)
+                self.connection.commit()
+
             for ring_time in new_timetable:
                 self.cursor.execute(f"""
                         INSERT INTO {self.table_override}(year, month, day, time) VALUES(?, ?, ?, ?) 
