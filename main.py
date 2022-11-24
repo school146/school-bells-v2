@@ -37,6 +37,11 @@ def add_unique(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
         timetable.add_rule_shift(message)
 
+@bot.message_handler(commands=["mute"])
+def mute(message):
+    if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
+        timetable.mute_event(bot, message)
+
 @bot.message_handler(commands=["shift"])
 def shift(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):

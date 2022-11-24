@@ -12,7 +12,7 @@ class TimetableStorage():
     connection = None
     table = 'bells'
     table_override = 'bell_overrides'
-
+    
     cursor = None
 
     def __init__(self):
@@ -33,6 +33,7 @@ class TimetableStorage():
             OnSunday INTEGER DEFAULT 0,
             FromDay TEXT DEFAULT "01.09",
             TillDay TEXT  DEFAULT "31.05",
+            muted INTEGER DEFAULT 0,
       	    PRIMARY KEY(id AUTOINCREMENT)
         ) 
         """)
@@ -264,21 +265,15 @@ class TimetableStorage():
         """)
         self.connection.commit()
         self.append_ring_shift(date, EventType.LESSON, 1, mins * 60)
+        
         return self
 
-    # Format hh:mm_lesson-duration_break-duration_long-break-duration
-    def remove_day(self, day: str): # -> UserStorage
-        id = str(id).replace('@', '').lower()
-
-        try:
-            self.cursor.execute(f"""
-                DELETE FROM {self.table} WHERE userid=?;
-            """, [id])    
-            self.connection.commit()
-
-        except:
-            print("User doesn't exist!")
-        
+    def mute(self, time: str):
+        self.cursor.execute(f"""
+        UPDATE {self.table_override}
+        SET muted=1
+        WHERE time={time}""")
+        self.connection.commit()
         return self
 
     def contains(self, id: str):

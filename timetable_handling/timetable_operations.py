@@ -92,3 +92,7 @@ def shift(bot: TeleBot, message):
     print(delta_seconds)
     TimetableStorage().shift(datetime(year, month, day), delta_seconds // 60)
     bot.reply_to(message, f'Расписание на {day}.{month}.{year} сдвинуто на {delta_seconds // 60} мин')
+
+def mute_event(bot: TeleBot, message):
+    
+    TimetableStorage().mute()
