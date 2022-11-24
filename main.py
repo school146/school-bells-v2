@@ -37,7 +37,7 @@ def admin_rm(message):
 def ring(message):
     if validator.check(message, UserStorage('admins').append_user('ncinsli')):
         daemon.instant_ring()
-        log_sucessful_ring(message.from_user.username)
+        # log_sucessful_ring(message.from_user.username)
 
     else:
         log_unsuccessful_ring(message.from_user.username)
