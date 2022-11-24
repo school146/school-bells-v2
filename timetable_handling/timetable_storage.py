@@ -44,16 +44,16 @@ class TimetableStorage():
         self.connection.commit()
 
         if length == 0:
-            self.add_default_bells('8:30', 0, 0, 0, 0, 0, 1, 0) #1
-            self.add_default_bells('8:50', 1) #2
-            self.add_default_bells('9:00', 0, 1, 1, 1, 1, 0, 0) #3
+            self.add_default_bells('08:30', 0, 0, 0, 0, 0, 1, 0) #1
+            self.add_default_bells('08:50', 1) #2
+            self.add_default_bells('09:00', 0, 1, 1, 1, 1, 0, 0) #3
            
-            self.add_default_bells('9:15', 0, 0, 0, 0, 0, 1, 0) #1
-            self.add_default_bells('9:35', 1) #2
-            self.add_default_bells('9:45', 1, 1, 1, 1, 1, 0, 0) #3
+            self.add_default_bells('09:15', 0, 0, 0, 0, 0, 1, 0) #1
+            self.add_default_bells('09:35', 1) #2
+            self.add_default_bells('09:45', 1, 1, 1, 1, 1, 0, 0) #3
            
-            self.add_default_bells('9:25', 0, 0, 0, 0, 0, 1, 0) #1
-            self.add_default_bells('9:55', 0, 1, 1, 1, 1, 0, 0) #3
+            self.add_default_bells('09:25', 0, 0, 0, 0, 0, 1, 0) #1
+            self.add_default_bells('09:55', 0, 1, 1, 1, 1, 0, 0) #3
 
             self.add_default_bells('10:10', 0, 0, 0, 0, 0, 1, 0) #1
             self.add_default_bells('10:30', 1) #2
@@ -101,6 +101,7 @@ class TimetableStorage():
             month INTEGER NOT NULL,
             day INTEGER NOT NULL,
             time TEXT NOT NULL,
+            muted INTEGER DEFAULT 0,
             PRIMARY KEY(id AUTOINCREMENT)
         ) 
         """)
@@ -111,11 +112,8 @@ class TimetableStorage():
                 INSERT INTO {self.table}(time, OnMonday, OnTuesday, OnWednesday, OnThursday, OnFriday, OnSaturday, OnSunday) Values(?, ?, ?, ?, ?, ?, ?, ?)
             """, [time, m, t, w, th, f, s, su])
         self.connection.commit()
-
-
     def sum_times(self, initial_time: str, seconds: int):
         if seconds == 0: return initial_time
-        print(initial_time)
         hours = int(initial_time.split(':')[0])
         minutes = int(initial_time.split(':')[1])
         minutes += seconds // 60
@@ -125,7 +123,6 @@ class TimetableStorage():
         minutes %= 60
 
         return f'{hours}:{str(minutes).zfill(2)}'
-
     def sub_times(self, initial_time: str, seconds: int):
         if seconds == 0: return initial_time
 
@@ -141,10 +138,16 @@ class TimetableStorage():
 
         return f'{hours}:{str(minutes).zfill(2)}'
 
-    def get_day(self, date: datetime):
-        # weekday = calendar.day_name[day.weekday()]  #'Wednesday'
+    def get_timetable(self, date: datetime):
+        print(f"""
+            SELECT time, muted
+            FROM {self.table_override}
+            WHERE day={date.day} 
+                  AND month={date.month}
+                  AND year={date.year}
+        """)
         self.cursor.execute(f"""
-            SELECT (time)
+            SELECT time, muted
             FROM {self.table_override}
             WHERE day={date.day} 
                   AND month={date.month}
@@ -155,43 +158,40 @@ class TimetableStorage():
         self.connection.commit()
         
         if content == []:
-            columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
-            print(columnName)
             # Значит на этот день распространяется обычное расписание
+            columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
             self.cursor.execute(f"""
-                SELECT (time) 
+                SELECT time, muted 
                 FROM {self.table}
                 WHERE {columnName}=1
             """)
 
             content = self.cursor.fetchall()
             self.connection.commit()
-            # print("Overrided content:", content)
     
         prepared_content = []
-        
+        muted = []
         for time in content:
-            prepared_content.append(time[0])
-        print(content)
-        content = list(map(str, prepared_content))
+            prepared_content.append(time[0].zfill(2))
+            muted.append(time[1])
 
-        return content
+        content = list(map(lambda e: str(e).zfill(2), prepared_content))
+        print('Content:', content)
+        print('Muted:', muted)
 
-    # Format hh:mm_lesson-duration_break-duration_long-break-duration
-    def append_ring_shift(self, date: datetime, event: EventType, order: int, delta_sec: int): # -> UserStorage
+        return content, muted
 
-        default_timetable = self.get_day(date)
+    def resize(self, date: datetime, event: EventType, order: int, seconds: int): # -> UserStorage
+
+        default_timetable = self.get_timetable(date)[0]
         new_timetable = default_timetable[:order - 1]
 
         for time in default_timetable[order - 1:]:
-            new_timetable.append(self.sum_times(time, delta_sec))
-
-        print('default', default_timetable)
-        print('new', new_timetable)
+            new_timetable.append(self.sum_times(time, seconds))
 
         try:
-            dmy = f'{date.year}.{date.month}.{date.day}'
-            
+            dmy = f'{date.year}.{str(date.month).zfill(2)}.{str(date.day).zfill(2)}'
+            print(dmy)
             for ring_time in default_timetable:
                 self.cursor.execute(f"""
                         DELETE FROM {self.table_override}
@@ -209,7 +209,7 @@ class TimetableStorage():
                 self.connection.commit()
 
         except sqlite3.IntegrityError:
-            print("User already exits!")
+            print("Time already exits!")
         
         self.connection.commit()
         return self
@@ -237,14 +237,11 @@ class TimetableStorage():
             content = self.cursor.fetchall()
             self.connection.commit()
             
-            print("RAW CONTENT IS", content)
             prepared = []
             for i in content:
                 prepared.append(i[0])
             content = prepared
-        
         else:
-            print("RAW CONTENT IS", content)
             prepared = []
             for i in content:
                 prepared.append(i)
@@ -257,23 +254,84 @@ class TimetableStorage():
 
         self.cursor.execute(f"""
             UPDATE {self.table_override}
-            SET time="{newTime}"
-            WHERE year={date.year}
+            SET {columnName}=0
+            WHERE {columnName}=1
             AND month={date.month}
             AND day={date.day}
             AND time="{content[0]}"
         """)
         self.connection.commit()
-        self.append_ring_shift(date, EventType.LESSON, 1, mins * 60)
+
+        self.concrete_shift(date, EventType.LESSON, 1, mins * 60)
         
         return self
 
-    def mute(self, time: str):
+    def mute(self, date_time: datetime):
+        time_str = str(date_time.time())[:5].zfill(5)
+        print(time_str)
+        timetable = self.get_timetable(date_time)[0]
+
+        print(f"""
+        SELECT * FROM {self.table_override}
+        WHERE time="{time_str}"
+        """)
         self.cursor.execute(f"""
-        UPDATE {self.table_override}
-        SET muted=1
-        WHERE time={time}""")
+        SELECT * FROM {self.table_override}
+        WHERE time="{time_str}"
+        """)
+        overrides = self.cursor.fetchall()
+        print(overrides)
         self.connection.commit()
+
+        if len(overrides) == 0:
+            # Значит этот день не был особенным, поэтому его надо таковым сделать
+            for ring_time in timetable:
+                self.cursor.execute(f"""
+                        INSERT INTO {self.table_override}(year, month, day, time, muted) VALUES(?, ?, ?, ?, ?) 
+                    """, [date_time.year, date_time.month, date_time.day, ring_time, 1 if ring_time == time_str else 0])
+                self.connection.commit()
+        else:
+            self.cursor.execute(f"""
+                UPDATE {self.table_override}
+                SET muted=1
+                WHERE time="{time_str}"
+            """)
+            self.connection.commit()
+
+        return self
+
+    def unmute(self, date_time: datetime):
+        time_str = str(date_time.time())[:5].zfill(5)
+        print(time_str)
+        timetable = self.get_timetable(date_time)[0]
+
+        print(f"""
+        SELECT * FROM {self.table_override}
+        WHERE time="{time_str}"
+        """)
+        self.cursor.execute(f"""
+        SELECT * FROM {self.table_override}
+        WHERE time="{time_str}"
+        """)
+        overrides = self.cursor.fetchall()
+        print(overrides)
+        self.connection.commit()
+
+        if len(overrides) == 0:
+            # Значит этот день не был особенным, поэтому его надо таковым сделать
+            for ring_time in timetable:
+                self.cursor.execute(f"""
+                        INSERT INTO {self.table_override}(year, month, day, time, muted) VALUES(?, ?, ?, ?, ?) 
+                    """, [date_time.year, date_time.month, date_time.day, ring_time, 0 if ring_time == time_str else 1])
+                self.connection.commit()
+        else:
+            self.cursor.execute(f"""
+                UPDATE {self.table_override}
+                SET muted=0
+                WHERE time="{time_str}"
+            """)
+            self.connection.commit()
+
         return self
 
     def contains(self, id: str):
