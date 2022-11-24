@@ -23,7 +23,7 @@ class TimetableStorage():
         self.cursor.execute(f"""
         CREATE TABLE IF NOT EXISTS {self.table} (
             id INTEGER,
-            time TEXT NOT NULL UNIQUE,
+            time TEXT NOT NULL,
             OnMonday INTEGER DEFAULT 0,
             OnTuesday INTEGER DEFAULT 0,
             OnWednesday INTEGER DEFAULT 0,
@@ -247,6 +247,8 @@ class TimetableStorage():
                 prepared.append(i)
             content = prepared
         
+
+        print('CONTENT', content)
         if mins > 0:
             newTime = self.sum_times(content[0], mins * 0)
         elif mins < 0:
@@ -254,15 +256,13 @@ class TimetableStorage():
 
         self.cursor.execute(f"""
             UPDATE {self.table_override}
-            SET {columnName}=0
-            WHERE {columnName}=1
+            SET time="{newTime}"
             AND month={date.month}
             AND day={date.day}
             AND time="{content[0]}"
         """)
         self.connection.commit()
-
-        self.concrete_shift(date, EventType.LESSON, 1, mins * 60)
+        self.resize(date, EventType.LESSON, 1, mins * 60)
         
         return self
 

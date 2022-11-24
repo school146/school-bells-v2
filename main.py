@@ -1,15 +1,21 @@
 import os
 from telebot import *
 from telebot import types
+from daemon.daemon import Daemon
 from users.user_storage import * 
-from logging_features.ring_logger import *
-import ring_commands.ring_commands as rings
 import privileges.validate as validator
 import privileges.edit_admins as admins
+from logging_features.ring_logger import *
+from timetable_handling.timetable_storage import TimetableStorage
 import timetable_handling.timetable_middleware as timetable
 
 token = os.environ["BELLER_TOKEN"]
 bot = TeleBot(token)
+
+date_time = datetime.now()
+refreshed_timetable, refreshed_mutetable = TimetableStorage().get_timetable(datetime(date_time.year, date_time.month, date_time.day))
+
+daemon = Daemon(refreshed_timetable, refreshed_mutetable)
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -30,7 +36,7 @@ def admin_rm(message):
 @bot.message_handler(commands=["ring"])
 def ring(message):
     if validator.check(message, UserStorage('admins').append_user('ncinsli')):
-        rings.ring()
+        daemon.instant_ring()
         log_sucessful_ring(message.from_user.username)
 
     else:
@@ -38,36 +44,36 @@ def ring(message):
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["resize"])
-def add_unique(message):
+def resize(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        timetable.resize_middleware(message)
+        timetable.resize_middleware(message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["mute"])
 def mute(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        timetable.mute_middleware(bot, message)
+        timetable.mute_middleware(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        timetable.unmute_middleware(bot, message)
+        timetable.unmute_middleware(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["shift"])
 def shift(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        timetable.shift_middleware(bot, message)
+        timetable.shift_middleware(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["get_timetable"])
 def get_timetable(message):
-    timetable.get_timetable_middleware(bot, message)
+    timetable.get_timetable_middleware(bot, message, daemon)
 
 @bot.message_handler(commands=["set_timetable"])
 def set_timetable(message):
@@ -81,7 +87,7 @@ def set_timetable(message):
         bot.reply_to(message, '❌ Недостаточно прав')
 
 def get_new_timetable(message):
-    timetable.set_timetable_middleware(bot, message)
+    timetable.set_timetable_middleware(bot, message, daemon)
     bot.reply_to(message, "Расписание изменено")
 
 
@@ -89,4 +95,6 @@ def get_new_timetable(message):
 def about(message):
     bot.send_message(message.chat.id, "BrigeBell146 - экземпляр системы BellBrige для МАОУ СОШ №146 с углублённым изучением физики, математики, информатики г. Перми")
 
+print("Starting daemon")
+daemon.start()
 bot.infinity_polling()

@@ -9,9 +9,10 @@ file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
 
 from timetable_storage import TimetableStorage
+from daemon.daemon import Daemon
 import utils
 
-def get_timetable_middleware(bot: TeleBot, message):
+def get_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
     timetables = TimetableStorage()
     decomposed = message.text.split()
     if len(decomposed) == 1: 
@@ -44,7 +45,7 @@ def get_timetable_middleware(bot: TeleBot, message):
     🗓 Расписание на <b>{utils.get_weekday_russian(date)}, {date.day}</b>:\n\n{to_out}
     """)
 
-def set_timetable_middleware(bot: TeleBot, message):
+def set_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
     file_name = message.document.file_name
     file_id = message.document.file_name
     file_id_info = bot.get_file(message.document.file_id)
@@ -53,7 +54,9 @@ def set_timetable_middleware(bot: TeleBot, message):
     print(content) # Текст файла
     # TODO: Загрузка json -> изменение дефолтной БД (+ скопировать старую, наверное)
 
-def resize_middleware(message):
+    utils.apply(daemon, datetime(datetime.now().year, datetime.now().month, datetime.now().day))
+
+def resize_middleware(message, daemon: Daemon):
     args = message.text.split()[1:]
     print(args)
     day = int(args[0].split('.')[0])
@@ -85,7 +88,9 @@ def resize_middleware(message):
         timetables = TimetableStorage()
         timetables.resize(date, EventType.BREAK, order * 2 + 1, in_seconds)
 
-def shift_middleware(bot: TeleBot, message):
+    utils.apply(daemon, datetime(year, month, day))
+
+def shift_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
     day = int(args[0].split('.')[0])
@@ -106,8 +111,10 @@ def shift_middleware(bot: TeleBot, message):
     TimetableStorage().shift(datetime(year, month, day), in_seconds // 60)
     bot.reply_to(message, f'Расписание на {utils.get_weekday_russian(datetime(year, month, day))}, {day} {month}, {year} сдвинуто на {in_seconds // 60} мин')
 
+    utils.apply(daemon, datetime(year, month, day))
+
 # /mute dd.mm.yyyy hh:mm
-def mute_middleware(bot: TeleBot, message):
+def mute_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
     day = int(args[0].split('.')[0])
@@ -122,7 +129,9 @@ def mute_middleware(bot: TeleBot, message):
     TimetableStorage().mute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} не будет включён')
 
-def unmute_middleware(bot: TeleBot, message):
+    utils.apply(daemon, datetime(year, month, day))
+
+def unmute_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
     day = int(args[0].split('.')[0])
@@ -136,3 +145,5 @@ def unmute_middleware(bot: TeleBot, message):
     # Сериализация
     TimetableStorage().unmute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} будет включён')
+
+    utils.apply(daemon, datetime(year, month, day))
