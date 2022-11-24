@@ -39,7 +39,6 @@ class UserStorage():
         except sqlite3.IntegrityError:
             print("User already exits!")
         
-        self.connection.commit()
         return self
 
     def remove_user(self, id):

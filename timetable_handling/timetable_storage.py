@@ -42,8 +42,6 @@ class TimetableStorage():
         length = len(self.cursor.fetchall())
         self.connection.commit()
 
-        print(length)
-
         if length == 0:
             self.add_default_bells('8:30', 0, 0, 0, 0, 0, 1, 0) #1
             self.add_default_bells('8:50', 1) #2
@@ -116,7 +114,7 @@ class TimetableStorage():
 
     def sum_times(self, initial_time: str, seconds: int):
         if seconds == 0: return initial_time
-
+        print(initial_time)
         hours = int(initial_time.split(':')[0])
         minutes = int(initial_time.split(':')[1])
         minutes += seconds // 60
@@ -145,7 +143,7 @@ class TimetableStorage():
     def get_day(self, date: datetime):
         # weekday = calendar.day_name[day.weekday()]  #'Wednesday'
         self.cursor.execute(f"""
-            SELECT DISTINCT (time)
+            SELECT (time)
             FROM {self.table_override}
             WHERE day={date.day} 
                   AND month={date.month}
@@ -154,7 +152,6 @@ class TimetableStorage():
 
         content = self.cursor.fetchall()
         self.connection.commit()
-        print(" overrided content:", content)
         
         if content == []:
             columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
@@ -174,7 +171,7 @@ class TimetableStorage():
         
         for time in content:
             prepared_content.append(time[0])
-        # print(content)
+        print(content)
         content = list(map(str, prepared_content))
 
         return content
@@ -216,6 +213,59 @@ class TimetableStorage():
         self.connection.commit()
         return self
 
+    def shift(self, date: datetime, mins):
+        self.cursor.execute(f"""
+            SELECT (time)
+            FROM {self.table_override}
+            WHERE year={date.year}
+            AND month={date.month}
+            AND day={date.day}
+        """)
+        content = self.cursor.fetchone()
+        self.connection.commit()
+
+        columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
+
+        if content is None:
+            # Значит на этот день ищем обычное расписание
+            self.cursor.execute(f"""
+                SELECT (time) 
+                FROM {self.table}
+                WHERE {columnName}=1
+            """)
+            content = self.cursor.fetchall()
+            self.connection.commit()
+            
+            print("RAW CONTENT IS", content)
+            prepared = []
+            for i in content:
+                prepared.append(i[0])
+            content = prepared
+        
+        else:
+            print("RAW CONTENT IS", content)
+            prepared = []
+            for i in content:
+                prepared.append(i)
+            content = prepared
+        
+        if mins > 0:
+            newTime = self.sum_times(content[0], mins * 0)
+        elif mins < 0:
+            newTime = self.sub_times(content[0], mins * 0)
+
+        self.cursor.execute(f"""
+            UPDATE {self.table_override}
+            SET time="{newTime}"
+            WHERE year={date.year}
+            AND month={date.month}
+            AND day={date.day}
+            AND time="{content[0]}"
+        """)
+        self.connection.commit()
+        self.append_ring_shift(date, EventType.LESSON, 1, mins * 60)
+        return self
+
     # Format hh:mm_lesson-duration_break-duration_long-break-duration
     def remove_day(self, day: str): # -> UserStorage
         id = str(id).replace('@', '').lower()
@@ -229,8 +279,6 @@ class TimetableStorage():
         except:
             print("User doesn't exist!")
         
-        self.connection.commit()
-
         return self
 
     def contains(self, id: str):

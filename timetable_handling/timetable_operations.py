@@ -69,3 +69,26 @@ def add_rule_shift(message):
     if type == 'break':
         timetables = TimetableStorage()
         timetables.append_ring_shift(date, EventType.BREAK, order * 2 + 1, delta_seconds)
+
+def shift(bot: TeleBot, message):
+    decomposed = message.text.split()
+    print(decomposed)
+    day = int(decomposed[1].split('.')[0])
+    month = int(decomposed[1].split('.')[1])
+    year = int(decomposed[1].split('.')[2])
+
+    delta = decomposed[2]
+    delta_seconds = 0
+    occurence = delta.find(next(filter(str.isalpha, delta)))
+
+    measured_value = int(delta[:occurence])
+    measure = delta[occurence:]
+    
+    if measure == 's': delta_seconds = measured_value
+    if measure == 'min': delta_seconds = measured_value * 60
+    if measure == 'h': delta_seconds = measured_value * 3600
+
+
+    print(delta_seconds)
+    TimetableStorage().shift(datetime(year, month, day), delta_seconds // 60)
+    bot.reply_to(message, f'Расписание на {day}.{month}.{year} сдвинуто на {delta_seconds // 60} мин')

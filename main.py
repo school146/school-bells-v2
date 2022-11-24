@@ -37,6 +37,12 @@ def add_unique(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
         timetable.add_rule_shift(message)
 
+@bot.message_handler(commands=["shift"])
+def shift(message):
+    if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
+        timetable.shift(bot, message)
+
+
 @bot.message_handler(commands=["get_timetable"])
 def get_timetable(message):
     timetable.get_timetable(bot, message)
