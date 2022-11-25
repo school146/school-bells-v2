@@ -20,8 +20,8 @@ class Daemon(threading.Thread):
 
     def update(self, new_timetable, new_muted):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
-        print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
         self.today_timetable = list(map(lambda e: e.zfill(5), self.today_timetable))
+        print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
 
         print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
 
