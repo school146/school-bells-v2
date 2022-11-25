@@ -11,9 +11,9 @@ A powerful telegram bot that provides a convenient interface for ring controllin
 **/pre_ring_edit** - Изменить интервал между предзвонком и основным звонком (в секундах) [TODO]
 
 **/lesson_duration** - Изменить длину уроков [TODO]
-**break_duration** - Изменить длину перемен [TODO]
+**/break_duration** - Изменить длину перемен [TODO]
 
-**/shift dd.mm.yyyy +-(int)(min/h) - Сдвинуть всё расписание
+**/shift dd.mm.yyyy +-(int)(min/h)** - Сдвинуть всё расписание
 **/resize dd.mm.yyyy lesson/break int +-int(h/min)** - Изменение длины конкретной перемены или конкретного урока в конкретный день (по правой границе
     Пример: **/resize 26.12.2022 break 1 +10min**
             **/resize 31.12.2022 lesson 2 -5min**
