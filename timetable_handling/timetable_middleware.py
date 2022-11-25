@@ -103,7 +103,6 @@ def shift_middleware(bot: TeleBot, message, daemon: Daemon):
     measured_value = int(delta[:postfix_index])
     postfix = delta[postfix_index:]
     
-    if postfix == 's': in_seconds = measured_value
     if postfix == 'min': in_seconds = measured_value * 60
     if postfix == 'h': in_seconds = measured_value * 3600
 

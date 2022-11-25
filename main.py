@@ -95,6 +95,6 @@ def get_new_timetable(message):
 def about(message):
     bot.send_message(message.chat.id, "BrigeBell146 - экземпляр системы BellBrige для МАОУ СОШ №146 с углублённым изучением физики, математики, информатики г. Перми")
 
-print("Starting daemon")
+print(f"Starting {colored('[DAEMON]', 'blue')} and BOT")
 daemon.start()
 bot.infinity_polling()

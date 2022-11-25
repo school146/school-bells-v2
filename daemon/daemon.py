@@ -23,7 +23,7 @@ class Daemon(threading.Thread):
         print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
         self.today_timetable = list(map(lambda e: e.zfill(5), self.today_timetable))
 
-        print(colored('[DAEMON] ', 'blue') + "Updated muted list:", self.muted_rings)
+        print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
 
     def run(self):
 

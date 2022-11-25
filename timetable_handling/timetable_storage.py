@@ -112,31 +112,34 @@ class TimetableStorage():
                 INSERT INTO {self.table}(time, OnMonday, OnTuesday, OnWednesday, OnThursday, OnFriday, OnSaturday, OnSunday) Values(?, ?, ?, ?, ?, ?, ?, ?)
             """, [time, m, t, w, th, f, s, su])
         self.connection.commit()
+   
     def sum_times(self, initial_time: str, seconds: int):
         if seconds == 0: return initial_time
         hours = int(initial_time.split(':')[0])
         minutes = int(initial_time.split(':')[1])
         minutes += seconds // 60
-        seconds %= 60
 
-        hours += minutes // 60
-        minutes %= 60
+        while minutes >= 60:
+            minutes -= 60
+            hours += 1
 
-        return f'{hours}:{str(minutes).zfill(2)}'
+        return f'{hours}:{str(minutes).zfill(2)}'.zfill(5)
+
     def sub_times(self, initial_time: str, seconds: int):
         if seconds == 0: return initial_time
 
+        delta_mins = seconds // 60
+
         hours = int(initial_time.split(':')[0])
         minutes = int(initial_time.split(':')[1])
-        minutes -= seconds // 60
-        if seconds // 60 > 0:
-            seconds = 60 - seconds
+        
+        minutes -= delta_mins
 
-        hours -= minutes // 60
-        if minutes // 60 > 0: 
-            minutes = 60 - minutes
+        while minutes < 0:
+            minutes += 60
+            hours -= 1
 
-        return f'{hours}:{str(minutes).zfill(2)}'
+        return f'{str(hours).zfill(2)}:{str(minutes).zfill(2)}'.zfill(5)
 
     def get_timetable(self, date: datetime):
         self.cursor.execute(f"""
@@ -177,10 +180,22 @@ class TimetableStorage():
         new_timetable = default_timetable[:order - 1]
 
         for time in default_timetable[order - 1:]:
-            new_timetable.append(self.sum_times(time, seconds))
+            result = self.sum_times(time, seconds) if seconds >= 0 else self.sub_times(time, abs(seconds))
+            new_timetable.append(result)
 
         try:
             dmy = f'{date.year}.{str(date.month).zfill(2)}.{str(date.day).zfill(2)}'
+            
+            self.cursor.execute(f"""
+                        SELECT muted FROM {self.table_override}
+                        WHERE year={date.year}
+                        AND month={date.month}
+                        AND day={date.day}
+                    """)
+            muted = list(map(lambda e: int(e[0]), self.cursor.fetchall()))
+            print(muted)
+            self.connection.commit()
+
             for ring_time in default_timetable:
                 self.cursor.execute(f"""
                         DELETE FROM {self.table_override}
@@ -191,10 +206,10 @@ class TimetableStorage():
                     """)
                 self.connection.commit()
 
-            for ring_time in new_timetable:
+            for i in range(len(new_timetable)):
                 self.cursor.execute(f"""
-                        INSERT INTO {self.table_override}(year, month, day, time) VALUES(?, ?, ?, ?) 
-                    """, [date.year, date.month, date.day, ring_time])
+                        INSERT INTO {self.table_override}(year, month, day, time, muted) VALUES(?, ?, ?, ?, ?) 
+                    """, [date.year, date.month, date.day, new_timetable[i], muted[i]])
                 self.connection.commit()
 
         except sqlite3.IntegrityError:
@@ -205,7 +220,7 @@ class TimetableStorage():
 
     def shift(self, date: datetime, mins):
         self.cursor.execute(f"""
-            SELECT (time)
+            SELECT time
             FROM {self.table_override}
             WHERE year={date.year}
             AND month={date.month}
@@ -214,41 +229,23 @@ class TimetableStorage():
         content = self.cursor.fetchone()
         self.connection.commit()
 
-        columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
-
         if content is None:
             # Значит на этот день ищем обычное расписание
+            columnName = 'On' + calendar.day_name[date.weekday()].capitalize()
+
             self.cursor.execute(f"""
-                SELECT (time) 
+                SELECT time, muted 
                 FROM {self.table}
                 WHERE {columnName}=1
             """)
             content = self.cursor.fetchall()
             self.connection.commit()
-            
-            prepared = []
-            for i in content:
-                prepared.append(i[0])
-            content = prepared
-        else:
-            prepared = []
-            for i in content:
-                prepared.append(i)
-            content = prepared
-        
-        if mins > 0:
-            newTime = self.sum_times(content[0], mins * 0)
-        elif mins < 0:
-            newTime = self.sub_times(content[0], mins * 0)
 
-        self.cursor.execute(f"""
-            UPDATE {self.table_override}
-            SET time="{newTime}"
-            AND month={date.month}
-            AND day={date.day}
-            AND time="{content[0]}"
-        """)
-        self.connection.commit()
+            for copied in content:
+                self.cursor.execute(f"""
+                    INSERT INTO {self.table_override}(year, month, day, time, muted) VALUES(?, ?, ?, ?, ?)
+                """, [date.year, date.month, date.day, copied[0], copied[1]])
+
         self.resize(date, EventType.LESSON, 1, mins * 60)
         
         return self
