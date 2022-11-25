@@ -11,3 +11,20 @@ def get_weekday_russian(date_time: datetime):
 def apply(daemon: Daemon, date: datetime):
     updated_table, updated_mutedtable = TimetableStorage().get_timetable(date)
     daemon.update(updated_table, updated_mutedtable)
+
+def time_literals_to_seconds(in_seconds): # абревиатуры типа 2m превращает в 120секунд
+    in_seconds = 0
+    occurence = delta.find(next(filter(str.isalpha, delta)))
+
+    measured_value = int(delta[:occurence])
+    measure = delta[occurence:]
+
+    if measure == 's': in_seconds = measured_value
+    if measure == 'min': in_seconds = measured_value * 60
+    if measure == 'h': in_seconds = measured_value * 3600
+
+    return in_seconds
+
+def is_time_format(timeArg):
+    # TODO: написать
+    return timeArg

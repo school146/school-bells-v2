@@ -2,7 +2,7 @@ import os
 from telebot import *
 from telebot import types
 from daemon.daemon import Daemon
-from users.user_storage import * 
+from users.user_storage import *
 import privileges.validate as validator
 import privileges.edit_admins as admins
 from logging_features.ring_logger import *
@@ -31,7 +31,7 @@ def admin_add(message):
 def admin_rm(message):
     admins.remove(bot, message)
     target = message.text.replace(' ', '')[len('/add_admin'):].replace('@', '')
-    
+
 
 @bot.message_handler(commands=["ring"])
 def ring(message):
@@ -78,17 +78,18 @@ def get_timetable(message):
 @bot.message_handler(commands=["set_timetable"])
 def set_timetable(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        bot.reply_to(message, """Отправьте файл расписания в формате
-        HH:MM - HH:MM
-        HH:MM - HH:MM
+        bot.reply_to(message,
+        """Отправьте файл расписания в формате JSON по одному из шаблонов
+        1. Сдвиговой формат(https://docs.github.com/......)
+        2. Абсолютный формат(https://docs.github.com/.....)
         """)
         bot.register_next_step_handler(message, get_new_timetable)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 def get_new_timetable(message):
-    timetable.set_timetable_middleware(bot, message, daemon)
-    bot.reply_to(message, "Расписание изменено")
+    returnedMessage = timetable.set_timetable_middleware(bot, message, daemon)
+    bot.reply_to(message, returnedMessage)
 
 
 @bot.message_handler(commands=["about"])
