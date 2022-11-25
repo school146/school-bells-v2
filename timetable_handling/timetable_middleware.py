@@ -58,7 +58,6 @@ def set_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
 
 def resize_middleware(message, daemon: Daemon):
     args = message.text.split()[1:]
-    print(args)
     day = int(args[0].split('.')[0])
     month = int(args[0].split('.')[1])
     year = int(args[0].split('.')[2])

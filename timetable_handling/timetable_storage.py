@@ -139,13 +139,6 @@ class TimetableStorage():
         return f'{hours}:{str(minutes).zfill(2)}'
 
     def get_timetable(self, date: datetime):
-        print(f"""
-            SELECT time, muted
-            FROM {self.table_override}
-            WHERE day={date.day} 
-                  AND month={date.month}
-                  AND year={date.year}
-        """)
         self.cursor.execute(f"""
             SELECT time, muted
             FROM {self.table_override}
@@ -176,9 +169,6 @@ class TimetableStorage():
             muted.append(time[1])
 
         content = list(map(lambda e: str(e).zfill(2), prepared_content))
-        print('Content:', content)
-        print('Muted:', muted)
-
         return content, muted
 
     def resize(self, date: datetime, event: EventType, order: int, seconds: int): # -> UserStorage
@@ -191,7 +181,6 @@ class TimetableStorage():
 
         try:
             dmy = f'{date.year}.{str(date.month).zfill(2)}.{str(date.day).zfill(2)}'
-            print(dmy)
             for ring_time in default_timetable:
                 self.cursor.execute(f"""
                         DELETE FROM {self.table_override}
@@ -247,8 +236,6 @@ class TimetableStorage():
                 prepared.append(i)
             content = prepared
         
-
-        print('CONTENT', content)
         if mins > 0:
             newTime = self.sum_times(content[0], mins * 0)
         elif mins < 0:
@@ -268,21 +255,15 @@ class TimetableStorage():
 
     def mute(self, date_time: datetime):
         time_str = str(date_time.time())[:5].zfill(5)
-        print(time_str)
         timetable = self.get_timetable(date_time)[0]
 
-        print(f"""
-        SELECT * FROM {self.table_override}
-        WHERE time="{time_str}"
-        """)
         self.cursor.execute(f"""
         SELECT * FROM {self.table_override}
         WHERE time="{time_str}"
         """)
         overrides = self.cursor.fetchall()
-        print(overrides)
-        self.connection.commit()
 
+        self.connection.commit()
         if len(overrides) == 0:
             # Значит этот день не был особенным, поэтому его надо таковым сделать
             for ring_time in timetable:
@@ -302,19 +283,13 @@ class TimetableStorage():
 
     def unmute(self, date_time: datetime):
         time_str = str(date_time.time())[:5].zfill(5)
-        print(time_str)
         timetable = self.get_timetable(date_time)[0]
 
-        print(f"""
-        SELECT * FROM {self.table_override}
-        WHERE time="{time_str}"
-        """)
         self.cursor.execute(f"""
         SELECT * FROM {self.table_override}
         WHERE time="{time_str}"
         """)
         overrides = self.cursor.fetchall()
-        print(overrides)
         self.connection.commit()
 
         if len(overrides) == 0:
