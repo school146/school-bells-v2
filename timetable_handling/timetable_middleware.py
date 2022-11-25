@@ -80,76 +80,78 @@ def set_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
 
     return returned
 
-def get_table_general(table):
-    for day in week:
-        if day in table:
-            if "enable" in day:
-                if day["enable"] == False:
-                    continue # в этот день звонки отключены
-            if "preBellTime" in day:
-                preBellTime = utils.time_literals_to_seconds(day["preBellTime"])
-                if preBellTime == False:
-                    return INCORRECT_FORMAT_ERROR
-            if "firstPreEnabled" in day:
-                firstPreEnabled = day["firstPreEnabled"]
-                if firstPreEnabled != True or firstPreEnabled != False:
-                    return INCORRECT_FORMAT_ERROR
-            if "allPreEnabled" in day:
-                allPreEnabled = day["allPreEnabled"]
-                if allPreEnabled != True or allPreEnabled != False:
-                    return INCORRECT_FORMAT_ERROR
-    return preBellTime, firstPreEnabled, allPreEnabled
 
 def shift_table_handler(table):
-    tableGeneral = get_table_general(table) # Получение общих для обоих форматов настроек
-    if tableGeneral == INCORRECT_FORMAT_ERROR:
-        return tableGeneral
+    bells = ['08:30', '08:50', '09:00', '09:15', '09:35', '09:45', '09:25', '09:55', '10:10', '10:30', '10:40', '10:20', '10:50', '11:05', '11:35', '11:25', '11:45', '11:55', '12:10', '12:40', '12:30', '12:50', '13:00', '13:15', '13:35', '13:45', '13:25', '13:55', '14:10', '14:30', '14:40', '14:15', '14:50', '15:00', '15:25', '15:35']
+    pre_db = dict.fromkeys(bells)
 
-    if "firstBell" in day:
-        firstBell = day["firstBell"]
-        if utils.is_time_format(firstBell) == False:
+
+    for day in week:
+        if "enable" in table[day]:
+            if table[day]["enable"] == False:
+                continue # в этот день звонки отключены
+        firstBell = -1
+        if "firstBell" in table[day]:
+            firstBell = table[day]["firstBell"]
+            if not utils.is_time_format(firstBell):
+                return INCORRECT_FORMAT_ERROR
+
+        if firstBell not in bells:
+            firstBell = firstBell.zfill(2)
+            pre_db[firstBell] = [day]
+        else:
+            if pre_db[firstBell] != None:
+                pre_db[firstBell].append(day)
+            else:
+                pre_db[firstBell] = [day]
+        if "shifts" in table[day]:
+            for b in table[day]["shifts"]:
+                if type(b) != type(0):
+                    return INCORRECT_FORMAT_ERROR
+            last = firstBell
+            for b in table[day]["shifts"]:
+                last = utils.sum_times(last, b*60)
+                if last not in pre_db.keys():
+                    pre_db[last] = [day]
+                else:
+                    if pre_db[last] != None:
+                        pre_db[last].append(day)
+                    else:
+                        pre_db[last] = [day]
+        else:
             return INCORRECT_FORMAT_ERROR
 
-    if "shifts" in day:
-        for b in shifts:
-            if type(b) != type(0):
-                return INCORRECT_FORMAT_ERROR
-    else:
-        return INCORRECT_FORMAT_ERROR
 
+    TimetableStorage().add_bells_by_dictionary(dict(sorted(pre_db.items())))
 
+    return "Расписание успешно перезаписано"
 
-    # в tableGeneral лежат данные о сдвигах звонков от первого звонка. наличие pre звонков и тд. там вообще изи написать.
-    # напишу когда инет норм будет, не оч дружу с sqlite
-    # Запись в бд таких данных где то была...
-    # в конце return "Расписание записано"
 
 def absolute_table_handler(table):
-    tableGeneral = get_table_general(table) # Получение общих для обоих форматов настроек
-    if tableGeneral == INCORRECT_FORMAT_ERROR:
-        return tableGeneral
+    bells = ['08:30', '08:50', '09:00', '09:15', '09:35', '09:45', '09:25', '09:55', '10:10', '10:30', '10:40', '10:20', '10:50', '11:05', '11:35', '11:25', '11:45', '11:55', '12:10', '12:40', '12:30', '12:50', '13:00', '13:15', '13:35', '13:45', '13:25', '13:55', '14:10', '14:30', '14:40', '14:15', '14:50', '15:00', '15:25', '15:35']
+    pre_db = dict.fromkeys(bells)
 
-    if "manual" in table:
-        if table["manual"] == True:
-            # снова простая запись. вообще напрямую в таблицу по сути.
-            # в конце return "Раписание записано"
+    for day in week:
+        if "enable" in table[day]:
+            if table[day]["enable"] == False:
+                continue # в этот день звонки отключены
 
+        if "bells" in table[day]:
+            for b in table[day]["bells"]:
+                a = b.zfill(2)
+                if a not in pre_db.keys():
+                    pre_db[a] = [day]
+                else:
+                    if pre_db[a] != None:
+                        pre_db[a].append(day)
+                    else:
+                        pre_db[a] = [day]
+        else:
+            return INCORRECT_FORMAT_ERROR
 
+    TimetableStorage().add_bells_by_dictionary(dict(sorted(pre_db.items())))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    utils.apply(daemon, datetime(datetime.now().year, datetime.now().month, datetime.now().day))
+    return "Расписание успешно перезаписано"
 
 def resize_middleware(message, daemon: Daemon):
     args = message.text.split()[1:]

@@ -4,6 +4,8 @@ import sqlite3
 from datetime import datetime
 import calendar
 
+week = ["OnMonday", "OnTuesday", "OnWednesday", "OnThursday", "OnFriday", "OnSaturday", "OnSunday"]
+
 class EventType(Enum):
     BREAK = 0
     LESSON = 1
@@ -112,6 +114,34 @@ class TimetableStorage():
                 INSERT INTO {self.table}(time, OnMonday, OnTuesday, OnWednesday, OnThursday, OnFriday, OnSaturday, OnSunday) Values(?, ?, ?, ?, ?, ?, ?, ?)
             """, [time, m, t, w, th, f, s, su])
         self.connection.commit()
+
+    def add_bells_by_dictionary(self, table):
+
+        self.cursor.execute(f"DELETE FROM {self.table}")
+        self.connection.commit()
+
+        for key in table.keys():
+            values = [key]
+            try:
+                sql = f"DELETE FROM {self.table} WHERE time ="
+                sql = sql + '"' + key + '"'
+                self.cursor.execute(sql)
+            except: # сорян!
+                pass
+
+            for day in week:
+                if table[key] != None:
+                    if day in table[key]:
+                        values.append(1)
+                    else:
+                        values.append(0)
+                else:
+                    values = [key, 0, 0, 0, 0, 0, 0, 0]
+
+
+            self.cursor.execute(f"""
+                INSERT INTO {self.table}(time, OnMonday, OnTuesday, OnWednesday, OnThursday, OnFriday, OnSaturday, OnSunday) Values(?, ?, ?, ?, ?, ?, ?, ?)""", values)
+            self.connection.commit()
    
     def sum_times(self, initial_time: str, seconds: int):
         if seconds == 0: return initial_time
