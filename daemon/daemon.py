@@ -28,7 +28,7 @@ class Daemon(threading.Thread):
     def run(self):
 
         while self.status:
-            time.sleep(0.5)
+            time.sleep(3)
             timing = str(datetime.now().time())[:5]
 
             if (timing in self.today_timetable and timing != self.last_called_timing):
