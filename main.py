@@ -10,7 +10,6 @@ from timetable_handling.timetable_storage import TimetableStorage
 import timetable_handling.timetable_middleware as timetable
 
 token = os.environ["BELLER_TOKEN"]
-#token = "5663752480:AAHT3sC-BUR0GXU2TSFnMMDYz-s291TvhRQ"
 bot = TeleBot(token)
 
 date_time = datetime.now()

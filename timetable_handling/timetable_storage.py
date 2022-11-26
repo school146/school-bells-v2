@@ -1,7 +1,8 @@
 from enum import Enum
-import sqlite3
+import timetable_handling.utils as utils
 from datetime import datetime
 import calendar
+import sqlite3
 from timetable_handling.utils import sum_times, sub_times
 
 week = ["OnMonday", "OnTuesday", "OnWednesday", "OnThursday", "OnFriday", "OnSaturday", "OnSunday"]
@@ -230,7 +231,7 @@ class TimetableStorage():
         self.connection.commit()
         return self
 
-    def shift(self, date: datetime, mins):
+    def shift(self, date: datetime, mins: int):
         self.cursor.execute(f"""
             SELECT time
             FROM {self.table_override}

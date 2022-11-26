@@ -72,8 +72,9 @@ def set_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
     else:
         return INCORRECT_FORMAT_ERROR
 
-    daemon.update(TimetableStorage().get_timetable(datetime.now()))
-
+    new_timetable, new_muted = TimetableStorage().get_timetable(datetime.now())
+    daemon.update(new_timetable, new_muted)
+    
     return returned
 
 
@@ -184,7 +185,8 @@ def resize_middleware(bot: TeleBot, message, daemon: Daemon):
 
     bot.reply_to(message, f"{'Урок' if event_type == 'lesson' else 'Перемена'} № {order} теперь {'длиннее' if in_seconds > 0 else 'короче'} на {abs(in_seconds) // 60} минут(ы)")
     
-    daemon.update(TimetableStorage().get_timetable(datetime.now()))
+    new_timetable, new_muted = TimetableStorage().get_timetable(datetime.now())
+    daemon.update(new_timetable, new_muted)
 
 def shift_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
@@ -206,7 +208,8 @@ def shift_middleware(bot: TeleBot, message, daemon: Daemon):
     TimetableStorage().shift(datetime(year, month, day), in_seconds // 60)
     bot.reply_to(message, f'Расписание на {utils.get_weekday_russian(datetime(year, month, day))}, {day} {month}, {year} сдвинуто на {in_seconds // 60} мин')
 
-    daemon.update(TimetableStorage().get_timetable(datetime.now()))
+    new_timetable, new_muted = TimetableStorage().get_timetable(datetime.now())
+    daemon.update(new_timetable, new_muted)
 
 
 # /mute dd.mm.yyyy hh:mm
@@ -225,7 +228,8 @@ def mute_middleware(bot: TeleBot, message, daemon: Daemon):
     TimetableStorage().mute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} не будет включён')
 
-    daemon.update(TimetableStorage().get_timetable(datetime.now()))
+    new_timetable, new_muted = TimetableStorage().get_timetable(datetime.now())
+    daemon.update(new_timetable, new_muted)
 
 def unmute_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
@@ -242,4 +246,5 @@ def unmute_middleware(bot: TeleBot, message, daemon: Daemon):
     TimetableStorage().unmute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} будет включён')
 
-    daemon.update(TimetableStorage().get_timetable(datetime.now()))
+    new_timetable, new_muted = TimetableStorage().get_timetable(datetime.now())
+    daemon.update(new_timetable, new_muted)

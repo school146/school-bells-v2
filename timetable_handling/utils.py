@@ -22,7 +22,7 @@ def is_time_format(timeArg):
     # TODO: написать
     return timeArg
 
-def sum_times(self, initial_time: str, seconds: int):
+def sum_times(initial_time: str, seconds: int):
     if seconds == 0: return initial_time
     hours = int(initial_time.split(':')[0])
     minutes = int(initial_time.split(':')[1])
@@ -34,7 +34,7 @@ def sum_times(self, initial_time: str, seconds: int):
 
     return f'{hours}:{str(minutes).zfill(2)}'.zfill(5)
 
-def sub_times(self, initial_time: str, seconds: int):
+def sub_times(initial_time: str, seconds: int):
     if seconds == 0: return initial_time
 
     delta_mins = seconds // 60
