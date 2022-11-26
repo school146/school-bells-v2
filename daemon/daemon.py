@@ -13,7 +13,8 @@ class Daemon(threading.Thread):
     muted_rings: list
     last_called_timing: str = '00:00'
     next_called_timing: str = '00:00'
-    screen = None
+
+    time_buffer = 0
     status: bool = True
 
     def __init__(self, timetable, muted):
@@ -26,10 +27,13 @@ class Daemon(threading.Thread):
     def update(self, new_timetable, new_muted):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
         self.today_timetable = list(map(lambda e: e.zfill(5), self.today_timetable))
+
         print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
+
         self.screen.message('Timetable updated')
-        time.sleep(5)
+        time_buffer = 5
         self.screen.clear()
+
         print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
 
     def run(self):
