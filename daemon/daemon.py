@@ -32,13 +32,16 @@ class Daemon(threading.Thread):
             timing = str(datetime.now().time())[:5]
 
             if (timing in self.today_timetable and timing != self.last_called_timing):
-               
                 ring_order = self.today_timetable.index(str(datetime.now().time())[:5])
+
                 if self.muted_rings[ring_order] == 0:
                     ring_callbacks.start_ring()
                     self.last_called_timing = timing
                     time.sleep(self.ring_duration)
                     ring_callbacks.stop_ring()
+                else:
+                    print(f'No ring (muted ring at {timing})')
+                    self.last_called_timing = timing
 
     def instant_ring(self):
         ring_callbacks.start_ring()

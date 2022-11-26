@@ -47,7 +47,7 @@ def ring(message):
 @bot.message_handler(commands=["resize"])
 def resize(message):
     if (validator.check(message, UserStorage('admins').append_user('ncinsli'))):
-        timetable.resize_middleware(message, daemon)
+        timetable.resize_middleware(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
@@ -83,6 +83,8 @@ def set_timetable(message):
         """Отправьте файл расписания в формате JSON по одному из шаблонов
         1. Сдвиговой формат(https://docs.github.com/......)
         2. Абсолютный формат(https://docs.github.com/.....)
+
+❗ Обратите внимание, что при применении расписания все изменения на все дни удалятся
         """)
         bot.register_next_step_handler(message, get_new_timetable)
     else:

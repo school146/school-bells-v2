@@ -1,8 +1,6 @@
-#TODO: Каталог ошибок, кодовых номеров и соотстветсующих строк
+#TODO: Каталог ошибок, кодовых номеров и соответствующих строк
 INCORRECT_FORMAT_ERROR = "Ошибка при чтении файла. Неверный формат"
 
-
-from timetable_handling.timetable_storage import EventType
 from datetime import datetime
 from telebot import TeleBot
 import json
@@ -11,6 +9,7 @@ import sys
 
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
+from timetable_handling.timetable_storage import EventType, TimetableStorage
 
 week = ["OnMonday", "OnTuesday", "OnWednesday", "OnThursday", "OnFriday", "OnSaturday", "OnSunday"]
 
@@ -31,16 +30,11 @@ def get_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
 
     list_db, muted = timetables.get_timetable(date)
     combined = []
-
+    print(list_db, muted)
     for i in range(0, len(list_db) - 1):
         if i % 2 == 0:
-            to_append = '<b>• ' + list_db[i] + ' — ' + list_db[i + 1] + '</b>'
-        else: to_append = '   ' + list_db[i] + ' — ' + list_db[i + 1]
-
-        if muted[i] == 1:
-            to_append = '🔇' + to_append
-            if i > 0:
-                combined[i - 1] += '🔇'
+            to_append = ('🔇' if muted[i] else '') + '<b>• ' + list_db[i] + ' — ' + list_db[i + 1] + '</b>' + ('🔇' if muted[i + 1] else '')
+        else: to_append = '   ' + ('🔇' if muted[i] else '') + list_db[i] + ' — ' + list_db[i + 1] + ('🔇' if muted[i + 1] else '')
 
         combined.append(to_append)
 
@@ -78,6 +72,8 @@ def set_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
     else:
         return INCORRECT_FORMAT_ERROR
 
+    daemon.update(TimetableStorage().get_timetable(datetime.now()))
+
     return returned
 
 
@@ -87,22 +83,27 @@ def shift_table_handler(table):
 
     for day in week:
         if "enable" in table[day]:
-            if table[day]["enable"] == False:
+            if not table[day]["enable"]:
                 continue # в этот день звонки отключены
         firstBell = -1
+        
         if "firstBell" in table[day]:
             firstBell = table[day]["firstBell"]
+        
             if not utils.is_time_format(firstBell):
                 return INCORRECT_FORMAT_ERROR
 
         if firstBell not in bells:
             firstBell = firstBell.zfill(2)
             pre_db[firstBell] = [day]
+        
         else:
             if pre_db[firstBell] != None:
                 pre_db[firstBell].append(day)
+            
             else:
                 pre_db[firstBell] = [day]
+
         if "shifts" in table[day]:
             for b in table[day]["shifts"]:
                 if type(b) != type(0):
@@ -122,9 +123,12 @@ def shift_table_handler(table):
 
     print(pre_db.items())
     pre_db_items = sorted(list(map(lambda e: (e[0].zfill(5), e[1]), pre_db.items())))
-    TimetableStorage().add_bells_by_dictionary(dict(pre_db_items))
 
-    return "Расписание успешно перезаписано"
+    storage = TimetableStorage()
+    storage.delete_overrides()
+    storage.set_bells(dict(pre_db_items))
+
+    return "✅ Расписание успешно перезаписано"
 
 
 def absolute_table_handler(table):
@@ -149,17 +153,19 @@ def absolute_table_handler(table):
         else:
             return INCORRECT_FORMAT_ERROR
 
-    TimetableStorage().add_bells_by_dictionary(dict(sorted(pre_db.items())))
+    storage = TimetableStorage()
+    storage.delete_overrides()
+    storage.set_bells(dict(sorted(pre_db.items())))
 
-    return "Расписание успешно перезаписано"
+    return "✅ Расписание успешно перезаписано"
 
-def resize_middleware(message, daemon: Daemon):
+def resize_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
     day = int(args[0].split('.')[0])
     month = int(args[0].split('.')[1])
     year = int(args[0].split('.')[2])
 
-    type = args[1]
+    event_type = args[1]
     order = int(args[2])
     delta = args[3]
 
@@ -168,15 +174,17 @@ def resize_middleware(message, daemon: Daemon):
     dmy = args[0].split('.')
     date = datetime(int(dmy[2]), int(dmy[1]), int(dmy[0]))
 
-    if type == 'lesson':
+    if event_type == 'lesson':
         timetables = TimetableStorage()
         timetables.resize(date, EventType.LESSON, order * 2, in_seconds)
 
-    if type == 'break':
+    if event_type == 'break':
         timetables = TimetableStorage()
         timetables.resize(date, EventType.BREAK, order * 2 + 1, in_seconds)
 
-    utils.apply(daemon, datetime(year, month, day))
+    bot.reply_to(message, f"{'Урок' if event_type == 'lesson' else 'Перемена'} № {order} теперь {'длиннее' if in_seconds > 0 else 'короче'} на {abs(in_seconds) // 60} минут(ы)")
+    
+    daemon.update(TimetableStorage().get_timetable(datetime.now()))
 
 def shift_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
@@ -198,7 +206,8 @@ def shift_middleware(bot: TeleBot, message, daemon: Daemon):
     TimetableStorage().shift(datetime(year, month, day), in_seconds // 60)
     bot.reply_to(message, f'Расписание на {utils.get_weekday_russian(datetime(year, month, day))}, {day} {month}, {year} сдвинуто на {in_seconds // 60} мин')
 
-    utils.apply(daemon, datetime(year, month, day))
+    daemon.update(TimetableStorage().get_timetable(datetime.now()))
+
 
 # /mute dd.mm.yyyy hh:mm
 def mute_middleware(bot: TeleBot, message, daemon: Daemon):
@@ -216,7 +225,7 @@ def mute_middleware(bot: TeleBot, message, daemon: Daemon):
     TimetableStorage().mute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} не будет включён')
 
-    utils.apply(daemon, datetime(year, month, day))
+    daemon.update(TimetableStorage().get_timetable(datetime.now()))
 
 def unmute_middleware(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
@@ -233,4 +242,4 @@ def unmute_middleware(bot: TeleBot, message, daemon: Daemon):
     TimetableStorage().unmute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} будет включён')
 
-    utils.apply(daemon, datetime(year, month, day))
+    daemon.update(TimetableStorage().get_timetable(datetime.now()))
