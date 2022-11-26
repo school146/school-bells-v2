@@ -1,3 +1,4 @@
+from displaying.LCD import LCD
 import threading
 import time
 from termcolor import colored
@@ -22,7 +23,8 @@ class Daemon(threading.Thread):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
         self.today_timetable = list(map(lambda e: e.zfill(5), self.today_timetable))
         print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
-
+        screen = LCD()
+        screen.message('Timetable updated')
         print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
 
     def run(self):
