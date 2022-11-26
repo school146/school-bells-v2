@@ -123,8 +123,7 @@ class TimetableStorage():
         for key in table.keys():
             values = [key]
             try:
-                sql = f"DELETE FROM {self.table} WHERE time ="
-                sql = sql + '"' + key + '"'
+                sql = f'DELETE FROM {self.table} WHERE time ="{key}"'
                 self.cursor.execute(sql)
             except: # сорян!
                 pass
@@ -136,7 +135,7 @@ class TimetableStorage():
                     else:
                         values.append(0)
                 else:
-                    values = [key, 0, 0, 0, 0, 0, 0, 0]
+                    values = [key.zfill(5), 0, 0, 0, 0, 0, 0, 0]
 
 
             self.cursor.execute(f"""

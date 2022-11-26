@@ -85,7 +85,6 @@ def shift_table_handler(table):
     bells = ['08:30', '08:50', '09:00', '09:15', '09:35', '09:45', '09:25', '09:55', '10:10', '10:30', '10:40', '10:20', '10:50', '11:05', '11:35', '11:25', '11:45', '11:55', '12:10', '12:40', '12:30', '12:50', '13:00', '13:15', '13:35', '13:45', '13:25', '13:55', '14:10', '14:30', '14:40', '14:15', '14:50', '15:00', '15:25', '15:35']
     pre_db = dict.fromkeys(bells)
 
-
     for day in week:
         if "enable" in table[day]:
             if table[day]["enable"] == False:
@@ -121,8 +120,9 @@ def shift_table_handler(table):
         else:
             return INCORRECT_FORMAT_ERROR
 
-
-    TimetableStorage().add_bells_by_dictionary(dict(sorted(pre_db.items())))
+    print(pre_db.items())
+    pre_db_items = sorted(list(map(lambda e: (e[0].zfill(5), e[1]), pre_db.items())))
+    TimetableStorage().add_bells_by_dictionary(dict(pre_db_items))
 
     return "Расписание успешно перезаписано"
 
@@ -138,7 +138,7 @@ def absolute_table_handler(table):
 
         if "bells" in table[day]:
             for b in table[day]["bells"]:
-                a = b.zfill(2)
+                a = b.zfill(5)
                 if a not in pre_db.keys():
                     pre_db[a] = [day]
                 else:
