@@ -9,16 +9,17 @@ import sys
 
 file_dir = os.path.dirname(__file__)
 sys.path.append(file_dir)
-from timetable_handling.timetable_storage import EventType, TimetableStorage
+import timetable_handling.timetable_storage as storage
+from timetable_handling.event_type import EventType
 
 week = ["OnMonday", "OnTuesday", "OnWednesday", "OnThursday", "OnFriday", "OnSaturday", "OnSunday"]
 
-from timetable_storage import TimetableStorage
+import timetable_handling.timetable_storage as storage
 from daemon.daemon import Daemon
 import utils
 
-def get_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
-    timetables = TimetableStorage()
+def get_timetable_middleware(bot: TeleBot, message):
+
     decomposed = message.text.split()
     if len(decomposed) == 1:
         dmy = str(datetime.now().date()).split('-')
@@ -28,7 +29,7 @@ def get_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
 
     date = datetime(int(dmy[0]), int(dmy[1]), int(dmy[2]))
 
-    list_db, muted = timetables.get_timetable(date)
+    list_db, muted = storage.get_timetable(date)
     combined = []
     print(list_db, muted)
     for i in range(0, len(list_db) - 1):
@@ -72,7 +73,7 @@ def set_timetable_middleware(bot: TeleBot, message, daemon: Daemon):
     else:
         return INCORRECT_FORMAT_ERROR
 
-    new_timetable, new_muted = TimetableStorage().get_timetable(datetime.now())
+    new_timetable, new_muted = storage.get_timetable(datetime.now())
     daemon.update(new_timetable, new_muted)
     
     return returned
