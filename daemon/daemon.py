@@ -4,7 +4,6 @@ import time
 from termcolor import colored
 from datetime import datetime
 import daemon.ring_callbacks as ring_callbacks
-import timetable_handling.timetable_storage as storage
 
 class Daemon(threading.Thread):
     ring_duration = 3
@@ -20,6 +19,7 @@ class Daemon(threading.Thread):
     def __init__(self, timetable, muted):
         super().__init__()
         self.update(timetable, muted)
+        ring_callbacks.init()
         # UNCOMMENT ON PI
         # self.screen = LCD()
         # self.screen.message(f'1 ring: {timetable[0]}')

@@ -1,24 +1,30 @@
 import os
-
+import sqlite3
 from telebot import *
 from telebot import types
 from daemon.daemon import Daemon
+from datetime import datetime
 
-import privileges.admins as admins
-import privileges.validate as validator
-import privileges.edit_admins as admins_middleware
+import admins.edit 
+import admins.validator
+import admins.middleware
 
 from logging_features.ring_logger import *
-import timetable_handling.timetable_storage as storage
-
-import timetable_handling.timetable_middleware as timetable
+import timetable.middleware
+import timetable.getting
+import timetable.muting 
 
 
 token = os.environ["BELLER_TOKEN"]
 bot = TeleBot(token)
 
+connection = sqlite3.connect('database.db', check_same_thread=False)
+cursor = connection.cursor()
+
+timetable.middleware.init(connection)
+
 date_time = datetime.now()
-refreshed_timetable, refreshed_mutetable = storage.get_timetable(datetime(date_time.year, date_time.month, date_time.day))
+refreshed_timetable, refreshed_mutetable = timetable.getting.get_time(connection, datetime(date_time.year, date_time.month, date_time.day))
 
 daemon = Daemon(refreshed_timetable, refreshed_mutetable)
 
@@ -28,19 +34,19 @@ def start(message):
 
 @bot.message_handler(commands=["add_admin"])
 def admin_add(message):
-    admins_middleware.add(bot, message)
+    admins.middleware.add(bot, message, connection)
     target = message.text.replace(' ', '')[len('/add_admin'):].replace('@', '')
 
 
 @bot.message_handler(commands=["rm_admin"])
 def admin_rm(message):
-    admins_middleware.remove(bot, message)
+    admins.middleware.remove(bot, message, connection)
     target = message.text.replace(' ', '')[len('/add_admin'):].replace('@', '')
 
 
 @bot.message_handler(commands=["ring"])
 def ring(message):
-    if validator.check(message):
+    if admins.validator.check(message, connection):
         daemon.instant_ring()
         # log_sucessful_ring(message.from_user.username)
 
@@ -50,39 +56,39 @@ def ring(message):
 
 @bot.message_handler(commands=["resize"])
 def resize(message):
-    if (validator.check(message)):
-        timetable.resize_middleware(bot, message, daemon)
+    if (admins.validator.check(message, connection)):
+        timetable.middleware.resize(bot, message, daemon, connection)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["mute"])
 def mute(message):
-    if (validator.check(message)):
-        timetable.mute_middleware(bot, message, daemon)
+    if (admins.validator.check(message, connection)):
+        timetable.middleware.mute(bot, message, daemon, connection)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
-    if (validator.check(message)):
-        timetable.unmute_middleware(bot, message, daemon)
+    if (admins.validator.check(message, connection)):
+        timetable.middleware.unmute(bot, message, daemon, connection)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["shift"])
 def shift(message):
-    if (validator.check(message)):
-        timetable.shift_middleware(bot, message, daemon)
+    if (admins.validator.check(message, connection)):
+        timetable.middleware.shift(bot, message, daemon, connection)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["get_timetable"])
 def get_timetable(message):
-    timetable.get_timetable_middleware(bot, message)
+    timetable.middleware.get_time(bot, message, connection)
 
 @bot.message_handler(commands=["set_timetable"])
 def set_timetable(message):
-    if (validator.check(message)):
+    if (admins.validator.check(message, connection)):
         bot.reply_to(message,
         """Отправьте файл расписания в формате JSON по одному из шаблонов
         1. Сдвиговой формат(https://docs.github.com/......)
@@ -95,16 +101,14 @@ def set_timetable(message):
         bot.reply_to(message, '❌ Недостаточно прав')
 
 def get_new_timetable(message):
-    returnedMessage = timetable.set_timetable_middleware(bot, message, daemon)
+    returnedMessage = timetable.middleware.set_time(bot, message, daemon, connection)
     bot.reply_to(message, returnedMessage)
-
 
 @bot.message_handler(commands=["about"])
 def about(message):
     bot.send_message(message.chat.id, "BrigeBell146 - экземпляр системы BellBrige для МАОУ СОШ №146 с углублённым изучением физики, математики, информатики г. Перми")
 
-print(f"Starting {colored('[DAEMON]', 'blue')} and BOT")
-admins.configure()
 
+print(f"Starting {colored('[DAEMON]', 'blue')} and BOT")
 daemon.start()
 bot.infinity_polling()
