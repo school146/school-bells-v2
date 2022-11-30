@@ -62,7 +62,7 @@ A powerful telegram bot that provides a convenient interface for ring controllin
 **/wakeup** - Включает всю автоматику, если она выключена [TODO]
 
 
-# Architechture
+# Architecture
 
 main.py - command routes 
 
