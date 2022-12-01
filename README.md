@@ -62,5 +62,18 @@ A powerful telegram bot that provides a convenient interface for ring controllin
 **/wakeup** - Включает всю автоматику, если она выключена [TODO]
 
 
+# Architecture
 
+main.py - command routes 
 
+ admins.middleware - command text processors for admin tools (/add_admin, /rm_admin)
+
+   admins/(edit, storage, validator etc.) - tools for SQL sync
+
+ timetable.middleware - command text processors for timetable editing tools (/shift, /resize, /mute etc.)
+
+   timetable/(shifting, resizing, getting, setting etc.) - tools for SQL sync
+        
+ daemon - the process that does all the waiting work
+    
+  
