@@ -3,9 +3,20 @@ import admins.edit, admins.storage, admins.validator
 from telebot import *
 from logging_features.previledge_logger import *
 
-def add(bot: TeleBot, message, connection: sqlite3.Connection):
-    admins.edit.append(connection, 'ncinsli')
+def init(connection: sqlite3.Connection):
+    cursor = connection.cursor()
 
+    table = 'admins'
+
+    cursor.execute(f"""
+    CREATE TABLE IF NOT EXISTS {table} (
+        userid TEXT UNIQUE
+    ) 
+    """)
+
+    connection.commit()
+
+def add(bot: TeleBot, message, connection: sqlite3.Connection):
     if ' ' not in message.text:
         bot.reply_to(message, 'Если Вы хотите добавить администратора, Вы должны указать его имя пользователя или Telegram ID')
         return

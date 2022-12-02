@@ -22,6 +22,7 @@ connection = sqlite3.connect('database.db', check_same_thread=False)
 cursor = connection.cursor()
 
 timetable.middleware.init(connection)
+admins.middleware.init(connection)
 
 date_time = datetime.now()
 refreshed_timetable, refreshed_mutetable = timetable.getting.get_time(connection, datetime(date_time.year, date_time.month, date_time.day))
@@ -111,4 +112,6 @@ def about(message):
 
 print(f"Starting {colored('[DAEMON]', 'blue')} and BOT")
 daemon.start()
+admins.edit.append(connection, 'ncinsli')
+
 bot.infinity_polling()

@@ -1,4 +1,4 @@
-import displaying.LCD_1602
+# import displaying.LCD_1602
 import threading
 import time
 from termcolor import colored
@@ -18,6 +18,7 @@ class Daemon(threading.Thread):
 
     def __init__(self, timetable, muted):
         super().__init__()
+        self.daemon = True
         self.update(timetable, muted)
         ring_callbacks.init()
         # UNCOMMENT ON PI
