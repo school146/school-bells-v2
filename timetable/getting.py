@@ -1,12 +1,13 @@
 from datetime import datetime
 import calendar
+import configuration
 import sqlite3 
 
-# Will be injected by dynaconf
-table = 'bells'
-table_override = 'bell_overrides'
+connection = configuration.connection
+table = configuration.time_table_name
+table_override = configuration.overrided_time_table_name
 
-def get_time(connection: sqlite3.Connection, date: datetime):
+def get_time(date: datetime):
     
     cursor = connection.cursor()
 

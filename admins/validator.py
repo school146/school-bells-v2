@@ -1,5 +1,8 @@
 import sqlite3
 import admins.storage
+import configuration
 
-def check(message, connection: sqlite3.Connection) -> bool:
-    return admins.storage.contains(str(message.from_user.username).lower(), connection) or admins.storage.contains(str(message.from_user.id), connection)
+connection = configuration.connection
+
+def check(message) -> bool:
+    return admins.storage.contains(str(message.from_user.username).lower()) or admins.storage.contains(str(message.from_user.id))

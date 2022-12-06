@@ -1,9 +1,11 @@
 import sqlite3
+import configuration
 
-# Will be injected by dynaconf
-table = 'admins'
+connection = configuration.connection
+table = configuration.admin_table_name
 
-def contains(id: str, connection: sqlite3.Connection) -> bool:
+def contains(id: str) -> bool:
+
     cursor = connection.cursor()
     cursor.execute(f"SELECT * FROM {table} WHERE userid=?", [id])
     content = cursor.fetchone()

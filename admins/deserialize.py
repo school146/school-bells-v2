@@ -1,13 +1,15 @@
 import sqlite3
+import configuration
 
-# Will be injected by dynaconf
-table = 'bells'
-table_override = 'bell_overrides'
+table = configuration.time_table_name
+table_override = configuration.overrided_time_table_name
+connection = configuration.connection
 
-def deserialize(connection: sqlite3.Connection) -> object:
+def deserialize() -> object:
     cursor = connection.cursor()
 
     cursor.execute(f"SELECT * FROM {table}")
     content = cursor.fetchall() # Strange
     connection.commit()
     return content
+

@@ -17,8 +17,10 @@ import timetable.getting
 import timetable.setting
 import timetable.overrides
 import timetable.timetable_defaultvalues as setup
+import configuration
 
-def init(connection: sqlite3.Connection):
+def init():
+    connection = configuration.connection
     cursor = connection.cursor()
 
     table = 'bells'
