@@ -2,17 +2,19 @@ from timetable.events import EventType
 from datetime import datetime
 import timetable.utils
 import timetable.getting
+import configuration
 import calendar
 import sqlite3
 
 # Will be injected by dynaconf
+connection = configuration.connection
 table = 'bells'
 table_override = 'bell_overrides'
 
-def resize(connection: sqlite3.Connection, date: datetime, event: EventType, order: int, seconds: int): # -> UserStorage
+def resize(date: datetime, event: EventType, order: int, seconds: int): # -> UserStorage
     cursor = connection.cursor()
 
-    default_timetable = timetable.getting.get_time(connection, date)[0]
+    default_timetable = timetable.getting.get_time(date)[0]
     new_timetable = default_timetable[:order - 1]
 
     for time in default_timetable[order - 1:]:

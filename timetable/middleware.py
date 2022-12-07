@@ -19,13 +19,13 @@ import timetable.overrides
 import timetable.timetable_defaultvalues as setup
 import configuration
 
+
+connection = configuration.connection
+cursor = connection.cursor()
+table = configuration.time_table_name
+table_override = configuration.overrided_time_table_name
+
 def init():
-    connection = configuration.connection
-    cursor = connection.cursor()
-
-    table = 'bells'
-    table_override = 'bell_overrides'
-
     cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS {table} (
         id INTEGER,
@@ -50,7 +50,7 @@ def init():
 
     connection.commit()
     if length == 0:
-        setup.do_dirty_work(connection, cursor)
+        setup.do_dirty_work(cursor)
 
     cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS {table_override} (
@@ -65,7 +65,7 @@ def init():
     """)
     connection.commit()
 
-def get_time(bot: TeleBot, message, connection: sqlite3.Connection):
+def get_time(bot: TeleBot, message):
 
     decomposed = message.text.split()
     if len(decomposed) == 1:
@@ -76,7 +76,7 @@ def get_time(bot: TeleBot, message, connection: sqlite3.Connection):
 
     date = datetime(int(dmy[0]), int(dmy[1]), int(dmy[2]))
 
-    list_db, muted = timetable.getting.get_time(connection, date)
+    list_db, muted = timetable.getting.get_time(date)
     combined = []
     print(list_db, muted)
     for i in range(0, len(list_db) - 1):
@@ -93,7 +93,7 @@ def get_time(bot: TeleBot, message, connection: sqlite3.Connection):
     🗓 Расписание на <b>{utils.get_weekday_russian(date)}, {date.day}</b>:\n\n{to_out}
     """)
 
-def set_time(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection):
+def set_time(bot: TeleBot, message, daemon: Daemon):
 
     # Свойства файла для загрузки
     file_name = message.document.file_name
@@ -114,19 +114,19 @@ def set_time(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connecti
         return INCORRECT_FORMAT_ERROR
 
     if table["format"] == "shift":
-        returned = shift_table_handler(table, connection)
+        returned = shift_table_handler(table)
     elif table["format"] == "absolute":
         returned = absolute_table_handler(table)
     else:
         return INCORRECT_FORMAT_ERROR
 
-    new_timetable, new_muted = timetable.getting.get_time(connection, datetime.now())
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
     
     return returned
 
 
-def shift_table_handler(table, connection: sqlite3.Connection):
+def shift_table_handler(table):
     bells = ['08:30', '08:50', '09:00', '09:15', '09:35', '09:45', '09:25', '09:55', '10:10', '10:30', '10:40', '10:20', '10:50', '11:05', '11:35', '11:25', '11:45', '11:55', '12:10', '12:40', '12:30', '12:50', '13:00', '13:15', '13:35', '13:45', '13:25', '13:55', '14:10', '14:30', '14:40', '14:15', '14:50', '15:00', '15:25', '15:35']
     pre_db = dict.fromkeys(bells)
 
@@ -173,8 +173,8 @@ def shift_table_handler(table, connection: sqlite3.Connection):
     print(pre_db.items())
     pre_db_items = sorted(list(map(lambda e: (e[0].zfill(5), e[1]), pre_db.items())))
 
-    timetable.overrides.delete_all(connection)
-    timetable.setting.set_time(connection, dict(pre_db_items))
+    timetable.overrides.delete_all()
+    timetable.setting.set_time(dict(pre_db_items))
 
     return "✅ Расписание успешно перезаписано"
 
@@ -206,7 +206,7 @@ def absolute_table_handler(table):
 
     return "✅ Расписание успешно перезаписано"
 
-def resize(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection):
+def resize(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
     day = int(args[0].split('.')[0])
     month = int(args[0].split('.')[1])
@@ -222,17 +222,17 @@ def resize(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection
     date = datetime(int(dmy[2]), int(dmy[1]), int(dmy[0]))
 
     if event_type == 'lesson':
-        timetable.resizing.resize(connection, date, EventType.LESSON, order * 2, in_seconds)
+        timetable.resizing.resize(date, EventType.LESSON, order * 2, in_seconds)
 
     if event_type == 'break':
-        timetable.resizing.resize(connection, date, EventType.BREAK, order * 2 + 1, in_seconds)
+        timetable.resizing.resize(date, EventType.BREAK, order * 2 + 1, in_seconds)
 
     bot.reply_to(message, f"{'Урок' if event_type == 'lesson' else 'Перемена'} № {order} теперь {'длиннее' if in_seconds > 0 else 'короче'} на {abs(in_seconds) // 60} минут(ы)")
     
-    new_timetable, new_muted = timetable.getting.get_time(connection, datetime.now())
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
 
-def shift(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection):
+def shift(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
     day = int(args[0].split('.')[0])
@@ -249,15 +249,15 @@ def shift(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection)
     if postfix == 'min': in_seconds = measured_value * 60
     if postfix == 'h': in_seconds = measured_value * 3600
 
-    timetable.shifting.shift(connection, datetime(year, month, day), in_seconds // 60)
+    timetable.shifting.shift(datetime(year, month, day), in_seconds // 60)
     bot.reply_to(message, f'Расписание на {utils.get_weekday_russian(datetime(year, month, day))}, {day} {month}, {year} сдвинуто на {in_seconds // 60} мин')
 
-    new_timetable, new_muted = timetable.getting.get_time(connection, datetime.now())
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
 
 
 # /mute dd.mm.yyyy hh:mm
-def mute(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection):
+def mute(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
     day = int(args[0].split('.')[0])
@@ -269,13 +269,13 @@ def mute(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection):
     minutes = int(number.split(':')[1])
 
     # Сериализация
-    timetable.muting.mute(connection, datetime(year, month, day, hour, minutes))
+    timetable.muting.mute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} не будет включён')
 
-    new_timetable, new_muted = timetable.getting.get_time(connection, datetime.now())
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
 
-def unmute(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection):
+def unmute(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
     day = int(args[0].split('.')[0])
@@ -287,8 +287,8 @@ def unmute(bot: TeleBot, message, daemon: Daemon, connection: sqlite3.Connection
     minutes = int(number.split(':')[1])
 
     # Сериализация
-    timetable.muting.unmute(connection, datetime(year, month, day, hour, minutes))
+    timetable.muting.unmute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} будет включён')
 
-    new_timetable, new_muted = timetable.getting.get_time(connection, datetime.now())
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)

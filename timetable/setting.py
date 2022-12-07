@@ -1,10 +1,11 @@
 import sqlite3
+import configuration
 
-# Will be injected by dynaconf
-table = 'bells'
-table_override = 'bell_overrides'
+table_override = configuration.overrided_time_table_name
+table = configuration.time_table_name
+connection = configuration.connection
 
-def set_time(connection: sqlite3.Connection, items):
+def set_time(items):
     cursor = connection.cursor()
 
     cursor.execute(f"DELETE FROM {table}")

@@ -4,12 +4,11 @@ from telebot import *
 import configuration
 from logging_features.previledge_logger import *
 
+connection = configuration.connection
+cursor = connection.cursor()
+table = configuration.admin_table_name
+
 def init():
-    connection = configuration.connection
-    cursor = connection.cursor()
-
-    table = configuration.admin_table_name
-
     cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS {table} (
         userid TEXT UNIQUE

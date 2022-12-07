@@ -5,16 +5,17 @@ import timetable.muting
 import timetable.shifting
 from datetime import datetime
 import timetable.middleware
+import configuration
 
-# Will be injected by dynaconf
-table = 'bells'
-table_override = 'bell_overrides'
+table_override = configuration.overrided_time_table_name
+table = configuration.time_table_name
+connection = configuration.connection
 
-def mute(connection: sqlite3.Connection, date_time: datetime):
+def mute(date_time: datetime):
     cursor = connection.cursor()
 
     time_str = str(date_time.time())[:5].zfill(5)
-    timetable_today = timetable.getting.get_time(connection, date_time)[0]
+    timetable_today = timetable.getting.get_time(date_time)[0]
 
     cursor.execute(f"""
     SELECT * FROM {table_override}
@@ -39,11 +40,11 @@ def mute(connection: sqlite3.Connection, date_time: datetime):
         connection.commit()
 
     
-def unmute(connection: sqlite3.Connection, date_time: datetime):
+def unmute(date_time: datetime):
     cursor = connection.cursor()
 
     time_str = str(date_time.time())[:5].zfill(5)
-    timetable_today = timetable.getting.get_time(connection, date_time)[0]
+    timetable_today = timetable.getting.get_time(date_time)[0]
 
     cursor.execute(f"""
     SELECT * FROM {table_override}

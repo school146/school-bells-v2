@@ -1,4 +1,6 @@
-import smbus
+try:
+    import smbus
+except ImportError: pass
 import time
 
 class LCD:

@@ -1,14 +1,16 @@
 import sqlite3
 import calendar
+import configuration
 import timetable.resizing
 from datetime import datetime
 from timetable.events import EventType
 
-# Will be injected by dynaconf
-table = 'bells'
-table_override = 'bell_overrides'
 
-def shift(connection: sqlite3.Connection, date: datetime, mins: int):
+table_override = configuration.overrided_time_table_name
+table = configuration.time_table_name
+connection = configuration.connection
+
+def shift(date: datetime, mins: int):
     cursor = connection.cursor()
     cursor.execute(f"""
         SELECT time
@@ -37,5 +39,5 @@ def shift(connection: sqlite3.Connection, date: datetime, mins: int):
                 INSERT INTO {table_override}(year, month, day, time, muted) VALUES(?, ?, ?, ?, ?)
             """, [date.year, date.month, date.day, copied[0], copied[1]])
 
-    timetable.resizing.resize(connection, date, EventType.LESSON, 1, mins * 60)
+    timetable.resizing.resize(date, EventType.LESSON, 1, mins * 60)
     

@@ -27,13 +27,13 @@ timetable.middleware.init()
 admins.middleware.init()
 
 date_time = datetime.now()
-refreshed_timetable, refreshed_mutetable = timetable.getting.get_time(connection, datetime(date_time.year, date_time.month, date_time.day))
+refreshed_timetable, refreshed_mutetable = timetable.getting.get_time(datetime(date_time.year, date_time.month, date_time.day))
 
 daemon = Daemon(refreshed_timetable, refreshed_mutetable)
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    bot.send_message(message.chat.id, 'Д')
+    bot.send_message(message.chat.id, 'Добрый день!')
 
 @bot.message_handler(commands=["add_admin"])
 def admin_add(message):
@@ -66,21 +66,21 @@ def resize(message):
 
 @bot.message_handler(commands=["mute"])
 def mute(message):
-    if (admins.validator.check(message, connection)):
+    if (admins.validator.check(message)):
         timetable.middleware.mute(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
-    if (admins.validator.check(message, connection)):
+    if (admins.validator.check(message)):
         timetable.middleware.unmute(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["shift"])
 def shift(message):
-    if (admins.validator.check(message, connection)):
+    if (admins.validator.check(message)):
         timetable.middleware.shift(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')

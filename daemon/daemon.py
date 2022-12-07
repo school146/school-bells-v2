@@ -1,9 +1,11 @@
-# import displaying.LCD_1602
+import displaying.LCD_1602
 import threading
+import os
 import time
 from termcolor import colored
 from datetime import datetime
 import daemon.ring_callbacks as ring_callbacks
+
 
 class Daemon(threading.Thread):
     ring_duration = 3
@@ -12,7 +14,7 @@ class Daemon(threading.Thread):
     order = 0
     last_called_timing: str = '00:00'
     next_called_timing: str = '00:00'
-    #screen = LCD()
+    gpio_mode = False
     time_buffer = 0
     status: bool = True
 
@@ -20,9 +22,14 @@ class Daemon(threading.Thread):
         super().__init__()
         self.daemon = True
         self.update(timetable, muted)
+        
+        if (os.system('echo 1 > /sys/class/gpio25/value && echo 0 > /sys/class/gpio25/value') == 0):
+            self.gpio_mode = True
+
         ring_callbacks.init()
         # UNCOMMENT ON PI
-        # displaying.LCD_1602.initial_output(timetable)
+        if self.gpio_mode:
+            displaying.LCD_1602.initial_output(timetable)
 
     def update(self, new_timetable, new_muted):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
