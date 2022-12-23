@@ -71,6 +71,13 @@ def mute(message):
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
+@bot.message_handler(commands=["mute_all"])
+def mute(message):
+    if (admins.validator.check(message)):
+        timetable.middleware.mute_all(bot, message, daemon)
+    else:
+        bot.reply_to(message, '❌ Недостаточно прав')
+
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
     if (admins.validator.check(message)):
@@ -88,6 +95,13 @@ def shift(message):
 @bot.message_handler(commands=["get_timetable"])
 def get_timetable(message):
     timetable.middleware.get_time(bot, message)
+
+@bot.callback_query_handler(func=lambda call: True)
+def get_timetable_callbacks(call):
+    if call.message:
+        call_data = call.data.split()
+        if call_data[0] == '/get_timetable':
+            timetable.middleware.get_time_edited(bot, call)
 
 @bot.message_handler(commands=["set_timetable"])
 def set_timetable(message):

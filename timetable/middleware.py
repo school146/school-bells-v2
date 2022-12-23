@@ -2,7 +2,7 @@
 INCORRECT_FORMAT_ERROR = "Ошибка при чтении файла. Неверный формат"
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from telebot import TeleBot
 import timetable.muting as timetable
 import json
@@ -11,6 +11,7 @@ import os
 import sys
 from timetable.events import EventType
 from daemon.daemon import Daemon
+from telebot import types
 import timetable.utils as utils
 import timetable.muting
 import timetable.getting
@@ -50,7 +51,7 @@ def init():
 
     connection.commit()
     if length == 0:
-        setup.do_dirty_work(cursor)
+        setup.do_dirty_work()
 
     cursor.execute(f"""
     CREATE TABLE IF NOT EXISTS {table_override} (
@@ -65,17 +66,28 @@ def init():
     """)
     connection.commit()
 
-def get_time(bot: TeleBot, message):
+def get_time_edited(bot: TeleBot, call):
+    call_data = call.data.split()
+    dmy = call_data[1].split('.')
+    day, month, year = int(dmy[0]), int(dmy[1]), int(dmy[2])
+    date = datetime(year, month, day)
+    bot.parse_mode = 'HTML'
 
-    decomposed = message.text.split()
-    if len(decomposed) == 1:
-        dmy = str(datetime.now().date()).split('-')
-    else:
-        dmy = (decomposed[1].split('.'))
-        dmy.reverse()
+    to_out = get_time_raw(date)
 
-    date = datetime(int(dmy[0]), int(dmy[1]), int(dmy[2]))
+    prev_day = date - timedelta(days=1)
+    dmy_prev = f'{prev_day.day}.{prev_day.month}.{prev_day.year}'
 
+    next_day = date + timedelta(days=1)
+    dmy_next = f'{next_day.day}.{next_day.month}.{next_day.year}'
+    go_left_button = types.InlineKeyboardButton(text="<", callback_data=f"/get_timetable {dmy_prev}")
+    go_right_button = types.InlineKeyboardButton(text=">", callback_data=f"/get_timetable {dmy_next}")
+
+    bot.edit_message_text(f"""
+    🗓 Расписание на <b>{utils.get_weekday_russian(date)}, {date.day}</b>:\n\n{to_out}
+    """, call.message.chat.id, call.message.message_id, reply_markup=types.InlineKeyboardMarkup().row(go_left_button, go_right_button))
+
+def get_time_raw(date: datetime):
     list_db, muted = timetable.getting.get_time(date)
     combined = []
     print(list_db, muted)
@@ -86,12 +98,33 @@ def get_time(bot: TeleBot, message):
 
         combined.append(to_append)
 
-    bot.parse_mode = 'HTML'
-    to_out = (' ' * 4 + '\n').join(combined)
+    return (' ' * 4 + '\n').join(combined) if combined != [] else '<b>На этот день нет расписания звонков</b>'
 
-    bot.reply_to(message, f"""
+def get_time(bot: TeleBot, message):
+    decomposed = message.text.split()
+    if len(decomposed) == 1:
+        dmy = str(datetime.now().date()).split('-')
+    else:
+        dmy = (decomposed[1].split('.'))
+        dmy.reverse()
+
+    date = datetime(int(dmy[0]), int(dmy[1]), int(dmy[2]))
+
+    bot.parse_mode = 'HTML'
+
+    to_out = get_time_raw(date)
+
+    prev_day = date - timedelta(days=1)
+    dmy_prev = f'{prev_day.day}.{prev_day.month}.{prev_day.year}'
+
+    next_day = date + timedelta(days=1)
+    dmy_next = f'{next_day.day}.{next_day.month}.{next_day.year}'
+    go_left_button = types.InlineKeyboardButton(text="<", callback_data=f"/get_timetable {dmy_prev}")
+    go_right_button = types.InlineKeyboardButton(text=">", callback_data=f"/get_timetable {dmy_next}")
+
+    bot.send_message(message.from_user.id, f"""
     🗓 Расписание на <b>{utils.get_weekday_russian(date)}, {date.day}</b>:\n\n{to_out}
-    """)
+    """, reply_markup=types.InlineKeyboardMarkup().row(go_left_button, go_right_button))
 
 def set_time(bot: TeleBot, message, daemon: Daemon):
 
@@ -271,6 +304,20 @@ def mute(bot: TeleBot, message, daemon: Daemon):
     # Сериализация
     timetable.muting.mute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} не будет включён')
+
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
+    daemon.update(new_timetable, new_muted)
+
+# /mute dd.mm.yyyy hh:mm
+def mute_all(bot: TeleBot, message, daemon: Daemon):
+    args = message.text.split()[1:]
+
+    day = int(args[0].split('.')[0])
+    month = int(args[0].split('.')[1])
+    year = int(args[0].split('.')[2])
+    # Сериализация
+    timetable.muting.mute_all(datetime(year, month, day))
+    bot.reply_to(message, f'Все звонки {day}.{month}.{year} будут заглушены')
 
     new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
