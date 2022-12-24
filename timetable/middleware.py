@@ -283,8 +283,9 @@ def shift(bot: TeleBot, message, daemon: Daemon):
     if postfix == 'h': in_seconds = measured_value * 3600
 
     timetable.shifting.shift(datetime(year, month, day), in_seconds // 60)
+    print("Shifted!")
     bot.reply_to(message, f'Расписание на {utils.get_weekday_russian(datetime(year, month, day))}, {day} {month}, {year} сдвинуто на {in_seconds // 60} мин')
-
+    print("Shifted after reply")
     new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
 
@@ -336,6 +337,20 @@ def unmute(bot: TeleBot, message, daemon: Daemon):
     # Сериализация
     timetable.muting.unmute(datetime(year, month, day, hour, minutes))
     bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} будет включён')
+
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
+    daemon.update(new_timetable, new_muted)
+
+# /mute dd.mm.yyyy hh:mm
+def unmute_all(bot: TeleBot, message, daemon: Daemon):
+    args = message.text.split()[1:]
+
+    day = int(args[0].split('.')[0])
+    month = int(args[0].split('.')[1])
+    year = int(args[0].split('.')[2])
+    # Сериализация
+    timetable.muting.unmute_all(datetime(year, month, day))
+    bot.reply_to(message, f'Все звонки {day}.{month}.{year} будут включены')
 
     new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)

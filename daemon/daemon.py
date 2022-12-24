@@ -38,8 +38,8 @@ class Daemon(threading.Thread):
         # Uncomment on PI
         # displaying.LCD_1602.update(self.today_timetable, self.order, self.next_called_timing)
 
-        print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
-        print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
+        # print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
+        # print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
 
     def run(self):
         while self.status:

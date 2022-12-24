@@ -72,7 +72,7 @@ def mute(message):
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["mute_all"])
-def mute(message):
+def mute_all(message):
     if (admins.validator.check(message)):
         timetable.middleware.mute_all(bot, message, daemon)
     else:
@@ -82,6 +82,13 @@ def mute(message):
 def unmute(message):
     if (admins.validator.check(message)):
         timetable.middleware.unmute(bot, message, daemon)
+    else:
+        bot.reply_to(message, '❌ Недостаточно прав')
+
+@bot.message_handler(commands=["unmute_all"])
+def unmute_all(message):
+    if (admins.validator.check(message)):
+        timetable.middleware.unmute_all(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
