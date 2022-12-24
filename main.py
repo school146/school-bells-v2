@@ -1,10 +1,7 @@
 import os
-import sqlite3
 from telebot import *
-from telebot import types
 from daemon.daemon import Daemon
 from datetime import datetime
-from dynaconf import settings
 import configuration
 
 import admins.edit 
@@ -96,6 +93,13 @@ def unmute_all(message):
 def shift(message):
     if (admins.validator.check(message)):
         timetable.middleware.shift(bot, message, daemon)
+    else:
+        bot.reply_to(message, '❌ Недостаточно прав')
+
+@bot.message_handler(commands=["pre_ring_edit"])
+def pre_ring_edit(message):
+    if (admins.validator.check(message)):
+        timetable.middleware.pre_ring_edit(bot, message)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 

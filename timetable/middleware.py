@@ -241,18 +241,27 @@ def absolute_table_handler(table):
 
 def resize(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
-    day = int(args[0].split('.')[0])
-    month = int(args[0].split('.')[1])
-    year = int(args[0].split('.')[2])
 
-    event_type = args[1]
-    order = int(args[2])
-    delta = args[3]
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+    delta = args[0]
+    event_type = args[0]
+    order = int(args[1])
+    delta = args[2]
 
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+       
+        event_type = args[1]
+        order = int(args[2])
+        delta = args[3]
+
+    date = datetime(year, month, day)
+    
     in_seconds = utils.time_literals_to_seconds(delta)
-
-    dmy = args[0].split('.')
-    date = datetime(int(dmy[2]), int(dmy[1]), int(dmy[0]))
 
     if event_type == 'lesson':
         timetable.resizing.resize(date, EventType.LESSON, order * 2, in_seconds)
@@ -268,11 +277,17 @@ def resize(bot: TeleBot, message, daemon: Daemon):
 def shift(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
-    day = int(args[0].split('.')[0])
-    month = int(args[0].split('.')[1])
-    year = int(args[0].split('.')[2])
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+    delta = args[0]
 
-    delta = args[1]
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+        delta = args[1]
+
     in_seconds = 0
     postfix_index = delta.find(next(filter(str.isalpha, delta)))
 
@@ -293,18 +308,24 @@ def shift(bot: TeleBot, message, daemon: Daemon):
 # /mute dd.mm.yyyy hh:mm
 def mute(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
+    
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+    number = args[0]
 
-    day = int(args[0].split('.')[0])
-    month = int(args[0].split('.')[1])
-    year = int(args[0].split('.')[2])
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+        number = args[1]
 
-    number = args[1]
     hour = int(number.split(':')[0])
     minutes = int(number.split(':')[1])
 
     # Сериализация
     timetable.muting.mute(datetime(year, month, day, hour, minutes))
-    bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} не будет включён')
+    bot.reply_to(message, f'Звонок в {str(hour).zfill(2)}:{str(minutes).zfill(2)} {day}.{month}.{year} не будет включён')
 
     new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
@@ -313,9 +334,15 @@ def mute(bot: TeleBot, message, daemon: Daemon):
 def mute_all(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
-    day = int(args[0].split('.')[0])
-    month = int(args[0].split('.')[1])
-    year = int(args[0].split('.')[2])
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+
     # Сериализация
     timetable.muting.mute_all(datetime(year, month, day))
     bot.reply_to(message, f'Все звонки {day}.{month}.{year} будут заглушены')
@@ -326,17 +353,23 @@ def mute_all(bot: TeleBot, message, daemon: Daemon):
 def unmute(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
-    day = int(args[0].split('.')[0])
-    month = int(args[0].split('.')[1])
-    year = int(args[0].split('.')[2])
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+    number = args[0]
 
-    number = args[1]
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+        number = args[1]
+
     hour = int(number.split(':')[0])
     minutes = int(number.split(':')[1])
 
     # Сериализация
     timetable.muting.unmute(datetime(year, month, day, hour, minutes))
-    bot.reply_to(message, f'Звонок в {hour}:{minutes} {day}.{month}.{year} будет включён')
+    bot.reply_to(message, f'Звонок в {str(hour).zfill(2)}:{str(minutes).zfill(2)} {day}.{month}.{year} будет включён')
 
     new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
@@ -345,12 +378,28 @@ def unmute(bot: TeleBot, message, daemon: Daemon):
 def unmute_all(bot: TeleBot, message, daemon: Daemon):
     args = message.text.split()[1:]
 
-    day = int(args[0].split('.')[0])
-    month = int(args[0].split('.')[1])
-    year = int(args[0].split('.')[2])
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+
     # Сериализация
     timetable.muting.unmute_all(datetime(year, month, day))
     bot.reply_to(message, f'Все звонки {day}.{month}.{year} будут включены')
 
     new_timetable, new_muted = timetable.getting.get_time(datetime.now())
     daemon.update(new_timetable, new_muted)
+
+
+def pre_ring_edit(bot: TeleBot, message):
+    args = message.text.split()[1:]
+    delta_min = int(args[0])
+
+    if delta_min <= 0: return
+    
+    configuration.pre_ring_delta = delta_min * 60
+    bot.reply_to(message, f'Интервал изменён на {delta_min} минут')

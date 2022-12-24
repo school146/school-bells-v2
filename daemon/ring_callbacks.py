@@ -13,6 +13,10 @@ def start_ring():
     print(colored('🔔 [DAEMON] RING!', 'blue'))
     os.system(f'echo 1 > /sys/class/gpio/gpio{port}/value')
 
+def start_pre_ring():
+    print(colored('🔔 [DAEMON] PRE RING!', 'green'))
+    os.system(f'echo 1 > /sys/class/gpio/gpio{port}/value')
+
 def stop_ring():
-    print(colored('🔔  [DAEMON STOP RING', 'blue'))
+    print(colored('🔔  [DAEMON] STOP RING', 'blue'))
     os.system(f'echo 0 > /sys/class/gpio/gpio{port}/value')
