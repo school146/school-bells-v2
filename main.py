@@ -59,7 +59,7 @@ def ring(message):
 @bot.message_handler(commands=["resize"])
 def resize(message):
     if (admins.validator.check(message)):
-        if ' ' not in message.text.split():
+        if ' ' not in message.text:
             bot.reply_to(message, replies.resize_incorrect_format)
         else:
             timetable.middleware.resize(bot, message, daemon)
@@ -69,7 +69,7 @@ def resize(message):
 @bot.message_handler(commands=["mute"])
 def mute(message):
     if (admins.validator.check(message)):
-        if ' ' not in message.text.split():
+        if ' ' not in message.text:
             bot.reply_to(message, replies.mute_incorrect_format)
         else:
             timetable.middleware.mute(bot, message, daemon)
@@ -86,7 +86,7 @@ def mute_all(message):
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
     if (admins.validator.check(message)):
-        if ' ' not in message.text.split():
+        if ' ' not in message.text:
             bot.reply_to(message, replies.unmute_incorrect_format)
         else:
             timetable.middleware.unmute(bot, message, daemon)
@@ -103,7 +103,7 @@ def unmute_all(message):
 @bot.message_handler(commands=["shift"])
 def shift(message):
     if (admins.validator.check(message)):
-        if ' ' not in message.text.split():
+        if ' ' not in message.text:
             bot.reply_to(message, replies.shift_incorrect_format)
         else:
             timetable.middleware.shift(bot, message, daemon)
@@ -113,7 +113,7 @@ def shift(message):
 @bot.message_handler(commands=["pre_ring_edit"])
 def pre_ring_edit(message):
     if (admins.validator.check(message)):
-        if ' ' not in message.text.split():
+        if ' ' not in message.text:
             bot.reply_to(message, replies.pre_ring_incorrect_format)
         else:
             timetable.middleware.pre_ring_edit(bot, message)
