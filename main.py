@@ -57,14 +57,32 @@ def ring(message):
 @bot.message_handler(commands=["resize"])
 def resize(message):
     if (admins.validator.check(message)):
-        timetable.middleware.resize(bot, message, daemon)
+        if ' ' not in message.text.split():
+            bot.reply_to(message, """❌ Введите команду в необходимом формате:
+            
+/resize lesson 1 +20min 
+Удлиняет сегодняшний первый урок на 20 минут
+
+/resize 22.09.2006 break 4 -5min
+Укорачивает четвертую перемену на заданную дату на пять минут""")
+        else:
+            timetable.middleware.resize(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["mute"])
 def mute(message):
     if (admins.validator.check(message)):
-        timetable.middleware.mute(bot, message, daemon)
+        if ' ' not in message.text.split():
+            bot.reply_to(message, """❌ Введите команду в необходимом формате:
+            
+/mute 10:40 
+Заглушает звонок в 10:40 на сегодня
+
+/mute 22.09.2006 10:40 
+Заглушает звонок в 10:40 на заданную дату""")
+        else:
+            timetable.middleware.mute(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
@@ -78,7 +96,16 @@ def mute_all(message):
 @bot.message_handler(commands=["unmute"])
 def unmute(message):
     if (admins.validator.check(message)):
-        timetable.middleware.unmute(bot, message, daemon)
+        if ' ' not in message.text.split():
+            bot.reply_to(message, """❌ Введите команду в необходимом формате:
+            
+/unmute 10:40 
+Убирает глушение с звонока в 10:40 на сегодня
+
+/mute 22.09.2006 10:40 
+Убирает глушение с звонока в 10:40 на заданную дату""")
+        else:
+            timetable.middleware.unmute(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
@@ -92,14 +119,30 @@ def unmute_all(message):
 @bot.message_handler(commands=["shift"])
 def shift(message):
     if (admins.validator.check(message)):
-        timetable.middleware.shift(bot, message, daemon)
+        if ' ' not in message.text.split():
+            bot.reply_to(message, """❌ Введите команду в необходимом формате:
+            
+/shift +10min 
+Сдвигает сегодняшнее расписание на 10 минут вперёд
+
+/shift 22.09.2006 -2h
+Сдвигает расписание в заданную дату на 2 часа назад""")
+        else:
+            timetable.middleware.shift(bot, message, daemon)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 
 @bot.message_handler(commands=["pre_ring_edit"])
 def pre_ring_edit(message):
     if (admins.validator.check(message)):
-        timetable.middleware.pre_ring_edit(bot, message)
+        if ' ' not in message.text.split():
+            bot.reply_to(message, """❌ Введите команду в необходимом формате:
+            
+/pre_ring_edit 5 
+За 5 минут до основного звонка будет подан предварительный
+""")
+        else:
+            timetable.middleware.pre_ring_edit(bot, message)
     else:
         bot.reply_to(message, '❌ Недостаточно прав')
 

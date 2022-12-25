@@ -82,5 +82,5 @@ class Daemon(threading.Thread):
 
     def instant_ring(self):
         ring_callbacks.start_ring()
-        time.sleep(self.ring_duration)
+        time.sleep(configuration.ring_duration)
         ring_callbacks.stop_ring()
