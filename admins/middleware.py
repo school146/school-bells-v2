@@ -23,17 +23,12 @@ def add(bot: TeleBot, message):
         return
     
     target = message.text.split()[1].replace('@', '')
-    connection = configuration.connection
 
-    if (admins.validator.check(message) and not admins.storage.contains(target)):
+    if (not admins.storage.contains(target)):
         admins.edit.append(target)
         log_admin_adding(message.from_user.username, target)
         bot.reply_to(message, f'✅ @{target} теперь администратор')
 
-    elif not admins.storage.contains(target):
-        bot.reply_to(message, '❌ У Вас нет прав администратора')
-        log_rejected_admin_adding(message.from_user.username, target, 'ACCESS_DENIED')
-        
     else:
         bot.reply_to(message, f'❌ @{target} уже администратор')
         log_rejected_admin_adding(message.from_user.username, target, 'NO_SUCH_ADMIN')
@@ -48,15 +43,11 @@ def remove(bot: TeleBot, message):
         bot.reply_to(message, 'Если Вы хотите удалить администратора, Вы должны указать его имя пользователя или Telegram ID')
         return
     
-    if (admins.validator.check(message) and admins.storage.contains(target)):
+    if (admins.storage.contains(target)):
         admins.edit.delete(target)
         log_admin_removing(message.from_user.username, target)
         bot.reply_to(message, f'✅ @{target} теперь не администратор')
-
-    elif admins.storage.contains(target):
-        bot.reply_to(message, '❌ У Вас нет прав администратора')
-        log_rejected_admin_removing(message.from_user.username, target, 'ACCESS_DENIED')
-
+        
     else:
         bot.reply_to(message, f'❌ @{target} не был администратором')
         log_rejected_admin_removing(message.from_user.username, target, 'NO_SUCH_ADMIN')

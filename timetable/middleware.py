@@ -403,3 +403,28 @@ def pre_ring_edit(bot: TeleBot, message):
     
     configuration.pre_ring_delta = delta_min * 60
     bot.reply_to(message, f'Интервал изменён на {delta_min} минут')
+
+def events_duration(bot: TeleBot, affected_events: EventType, message, daemon: Daemon):
+    args = message.text.split()[1:]
+
+    day = datetime.now().day
+    month = datetime.now().month
+    year = datetime.now().year
+    delta = args[0]
+
+    if '.' in message.text:
+        day = int(args[0].split('.')[0])
+        month = int(args[0].split('.')[1])
+        year = int(args[0].split('.')[2])
+        delta = args[1]
+
+    in_seconds = 0
+    postfix_index = delta.find(next(filter(str.isalpha, delta)))
+
+    measured_value = int(delta[:postfix_index])
+    postfix = delta[postfix_index:]
+
+    if postfix == 'min': in_seconds = measured_value * 60
+    if postfix == 'h': in_seconds = measured_value * 3600
+
+    timetable.resizing.resize_events(datetime(year, month, day), affected_events, in_seconds // 60)
