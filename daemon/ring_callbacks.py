@@ -3,7 +3,7 @@ from telebot import *
 from termcolor import colored
 
 duration = 3000 #Config
-port = 25
+port = 10
 
 def init():
     os.system(f'echo {port} > /sys/class/gpio/export')

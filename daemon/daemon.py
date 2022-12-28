@@ -27,7 +27,7 @@ class Daemon(threading.Thread):
         
         ring_callbacks.init()
         # UNCOMMENT ON PI
-        displaying.LCD_2004.initial_output(table)
+        displaying.LCD_2004.initial_output(self.today_timetable)
 
     def update(self, new_timetable, new_muted):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
@@ -46,7 +46,6 @@ class Daemon(threading.Thread):
             timing_forward = timetable.utils.sum_times(timing, configuration.pre_ring_delta)
 
             if (timing in self.today_timetable and timing != self.last_called_timing):
-                self.screen.clear()
                 self.order += 1
 
                 ring_order = self.today_timetable.index(str(datetime.now().time())[:5])
@@ -60,7 +59,14 @@ class Daemon(threading.Thread):
                 else:
                     print(f'No ring (muted ring at {timing})')
                     self.last_called_timing = timing
-
+                
+                tempIdx = self.today_timetable.index(timing)
+                if tempIdx != len(self.today_timetable)-1:
+                    self.next_called_timing = self.today_timetable[tempIdx+1]
+                    displaying.LCD_2004.next(self.next_called_timing)
+                else:
+                    self.next_called_timing = "-1" # no more rings for today
+                    display.LCD_2004.no_more_rings()
             if (timing_forward in self.today_timetable and timing != self.last_called_timing):
                 ring_order = self.today_timetable.index(timing_forward)
 
