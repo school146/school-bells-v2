@@ -45,6 +45,7 @@ def set_screen(timetable: list, nearest: int):
         lcd.crlf()
         lcd.write_string(f'This period: {thisPeriod} min')
     else:
+        lcd.clear()
         lcd.write_string('No more rings today')
 
 def initial_output(timetable: list):
@@ -83,3 +84,4 @@ def no_more_rings():
     lcd.clear()
     lcd.writestring('No more rings for today')
     print('no more rings')
+
