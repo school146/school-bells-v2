@@ -63,7 +63,7 @@ class Daemon(threading.Thread):
                 tempIdx = self.today_timetable.index(timing)
                 if tempIdx != len(self.today_timetable)-1:
                     self.next_called_timing = self.today_timetable[tempIdx+1]
-                    displaying.LCD_2004.next(self.next_called_timing)
+                    displaying.LCD_2004.next(self.today_timetable, tempIdx+1)
                 else:
                     self.next_called_timing = "-1" # no more rings for today
                     display.LCD_2004.no_more_rings()

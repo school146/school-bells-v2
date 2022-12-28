@@ -203,7 +203,6 @@ def shift_table_handler(table):
         else:
             return INCORRECT_FORMAT_ERROR
 
-    print(pre_db.items())
     pre_db_items = sorted(list(map(lambda e: (e[0].zfill(5), e[1]), pre_db.items())))
 
     timetable.overrides.delete_all()
@@ -428,3 +427,6 @@ def events_duration(bot: TeleBot, affected_events: EventType, message, daemon: D
     if postfix == 'h': in_seconds = measured_value * 3600
 
     timetable.resizing.resize_events(datetime(year, month, day), affected_events, in_seconds // 60)
+
+    new_timetable, new_muted = timetable.getting.get_time(datetime.now())
+    daemon.update(new_timetable, new_muted)

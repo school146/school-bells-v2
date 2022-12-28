@@ -154,6 +154,7 @@ def lesson_duration(message):
             bot.reply_to(message, replies.lesson_duration_incorrect_format)
         else:
             timetable.middleware.events_duration(bot, EventType.LESSON, message, daemon)
+            bot.reply_to(message, "✅ Продолжительность уроков успешно изменена")
     else:
         bot.reply_to(message, replies.access_denied)    
 
@@ -164,6 +165,7 @@ def lesson_duration(message):
             bot.reply_to(message, replies.break_duration_incorrect_format)
         else:
             timetable.middleware.events_duration(bot, EventType.BREAK, message, daemon)
+            bot.reply_to(message, "✅ Продолжительность перемен успешно изменена")
     else:
         bot.reply_to(message, replies.access_denied)    
 
