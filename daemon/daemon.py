@@ -70,6 +70,9 @@ class Daemon(threading.Thread):
             if (timing_forward in self.today_timetable and timing != self.last_called_timing):
                 ring_order = self.today_timetable.index(timing_forward)
 
+
+                if ring_order % 2 != 0: continue
+
                 if self.muted_rings[ring_order] == 0:
                     ring_callbacks.start_pre_ring()
                     
