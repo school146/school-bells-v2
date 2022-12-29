@@ -33,7 +33,7 @@ def set_screen(timetable: list, nearest: int):
         else:
             hours, minutes = map(int, timetable[nearest].split(':'))
             difference = list(map(int, utils.sub_times(timetable[nearest+1], hours * 3600 + minutes * 60).split(":")))
-            nextPeriod = str(difference[0] * 60 + difference[1]) + "min"
+            nextPeriod = str(difference[0] * 60 + difference[1]) + " min"
         if nowEvent == "Off":
             thisPeriod = "Off"
         lcd.clear()
@@ -60,7 +60,7 @@ def initial_output(timetable: list):
     lcd.crlf()
     lcd.write_string('    Version: 1.2')
     lcd.crlf()
-    lcd.write_string(' Last update: 28.12')
+    lcd.write_string(' Last update: 29.12')
     lcd.crlf()
     lcd.write_string('        2022')
     lcd.crlf()
@@ -82,5 +82,5 @@ def next(timetable: list, order: int):
     set_screen(timetable, order)
 def no_more_rings():
     lcd.clear()
-    lcd.writestring('No more rings for today')
+    lcd.writestring('No more rings today')
     print('no more rings')
