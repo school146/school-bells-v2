@@ -20,7 +20,6 @@ class Daemon(threading.Thread):
     def __init__(self, table, muted):
         super().__init__()
         self.daemon = True
-        self.update(table, muted)
         
         if (os.system('echo 1 > /sys/class/gpio10/value && echo 0 > /sys/class/gpio10/value') == 0):
             self.gpio_mode = True
@@ -28,6 +27,8 @@ class Daemon(threading.Thread):
         ring_callbacks.init()
         # UNCOMMENT ON PI
         displaying.LCD_2004.initial_output(self.today_timetable)
+        self.update(table, muted)
+
 
     def update(self, new_timetable, new_muted):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
