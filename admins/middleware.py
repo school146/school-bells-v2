@@ -34,7 +34,6 @@ def add(bot: TeleBot, message):
         log_rejected_admin_adding(message.from_user.username, target, 'NO_SUCH_ADMIN')
 
 def remove(bot: TeleBot, message):
-    admins.edit.append('ncinsli')
     connection = configuration.connection
     
     target = message.text.replace(' ', '')[len('/rm_admin'):].replace('@', '')

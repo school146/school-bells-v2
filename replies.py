@@ -1,3 +1,10 @@
+from datetime import datetime
+import subprocess
+import daemon.daemon as daemon
+import configuration
+import timetable.utils
+import utils
+
 access_denied = '❌ Недостаточно прав'
 greeting = 'Добрый день!'
 
@@ -65,3 +72,56 @@ break_duration_incorrect_format ="""❌ Введите команду в нео�
 """
 
 about = "BrigeBell146 - экземпляр системы BellBrige для МАОУ СОШ №146 с углублённым изучением физики, математики, информатики г. Перми"
+
+def get_state_reply(daemon: daemon.Daemon) -> str: 
+    daemon.update_ring_order()
+    nearest, timetable = daemon.order, daemon.today_timetable
+    nowEvent = "Off"
+
+    print(nearest)
+    if nearest != -1:
+        thisPeriod = 0
+        nextPeriod = 0
+        nowEvent = "Off"
+        if nearest != 0:
+            hours, minutes = map(int, timetable[nearest-1].split(':'))
+            difference = list(map(int, timetable.utils.sub_times(timetable[nearest], hours * 3600 + minutes * 60).split(":")))
+            thisPeriod = str(difference[0] * 60 + difference[1]) + " мин"   
+            if nearest % 2 == 0:
+                nowEvent = "перемена"
+            else:
+                nowEvent = "урок"
+        if nearest == len(timetable)-1:
+            nextPeriod = "нисколько"
+        else:
+            hours, minutes = map(int, timetable[nearest].split(':'))
+            difference = list(map(int, timetable.utils.sub_times(timetable[nearest+1], hours * 3600 + minutes * 60).split(":")))
+            nextPeriod = str(difference[0] * 60 + difference[1]) + " мин"
+        if nowEvent == "Off":
+            thisPeriod = "нисколько"
+        current_rings = ('Текущий ' if nowEvent == 'урок' else 'Текущая ') + nowEvent + ' длится ' + thisPeriod
+    else:
+        current_rings = 'Сегодня больше нет уроков'
+    
+    ans = f'''🤖 Отчёт от {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}
+
+🛎 Состояние звонков: 
+''' 
+
+    ans += f'''Следующий звонок в: {timetable[nearest]}
+Сейчас: {nowEvent.capitalize()}
+{current_rings}''' if nowEvent != 'Off' else 'Сегодня уже не будет звонков'
+
+    ans += f'''
+
+⚙️ Конфигурация
+Интервал предварительного звонка: за {configuration.pre_ring_delta // 60} мин до основного
+Длина звонка: {configuration.ring_duration} мин
+Длина предварительного звонка: {configuration.pre_ring_duration} мин
+
+💾 Система
+Аптайм: {utils.get_uptime()}
+Температура: {utils.get_cpu_temp()}
+Статус: {configuration.status}
+'''
+    return ans

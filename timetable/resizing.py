@@ -6,7 +6,6 @@ import configuration
 import calendar
 import sqlite3
 
-# Will be injected by dynaconf
 connection = configuration.connection
 table = 'bells'
 table_override = 'bell_overrides'
@@ -63,8 +62,9 @@ def resize(date: datetime, event: EventType, order: int, seconds: int): # -> Use
 
     except sqlite3.IntegrityError:
         print("Time already exits!")
-    
-    connection.commit()
+    try:
+        connection.commit()
+    except:pass
 
 def resize_events(date: datetime, event: EventType, seconds: int):
     cursor = connection.cursor()
@@ -131,5 +131,6 @@ def resize_events(date: datetime, event: EventType, seconds: int):
 
     except sqlite3.IntegrityError:
         print("Time already exits!")
-    
-    connection.commit()
+    try:
+        connection.commit()
+    except: pass

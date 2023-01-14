@@ -1,4 +1,5 @@
 import os
+import subprocess
 from telebot import *
 from daemon.daemon import Daemon
 from datetime import datetime
@@ -28,9 +29,33 @@ date_time = datetime.now()
 refreshed_timetable, refreshed_mutetable = timetable.getting.get_time(datetime(date_time.year, date_time.month, date_time.day))
 
 daemon = Daemon(refreshed_timetable, refreshed_mutetable)
+daemon.debugger = bot
+
+@bot.message_handler(commands=["exec"])
+def exec(message):
+    if (admins.validator.check(message)):
+        print(subprocess.check_output(message.text[5:].split()))
+        bot.reply_to(message, subprocess.check_output(message.text[5:].split()))
+    else:
+        bot.reply_to(message, replies.access_denied)
+
+@bot.message_handler(commands=["set_status"])
+def set_status(message):
+    if (admins.validator.check(message)):
+        configuration.status = message.text[8:]
+#       print(overAllStatus)
+#       print(subprocess.check_output(message.text[5:].split()))
+        bot.reply_to(message, '✅ Статус поменян')
+    else:
+        bot.reply_to(message, replies.access_denied)
+
+@bot.message_handler(commands=["state"])
+def state(message):
+    bot.reply_to(message, replies.get_state_reply(daemon))
 
 @bot.message_handler(commands=["start"])
 def start(message):
+    print(message.chat.id)
     bot.send_message(message.chat.id, replies.greeting)
 
 @bot.message_handler(commands=["add_admin"])
@@ -50,7 +75,11 @@ def admin_rm(message):
 @bot.message_handler(commands=["ring"])
 def ring(message):
     if admins.validator.check(message):
-        daemon.instant_ring()
+        duration = configuration.ring_duration
+        try:
+            if message.text != '/ring': duration = int(message.text.split()[1])
+        except: bot.reply_to(message, 'Неверный аргумент')
+        daemon.instant_ring(duration)
         # log_sucessful_ring(message.from_user.username)
     else:
         log_unsuccessful_ring(message.from_user.username)
@@ -172,6 +201,8 @@ def lesson_duration(message):
 
 print(f"Starting {colored('[DAEMON]', 'blue')} and BOT")
 daemon.start()
-admins.edit.append(configuration.owner)
+
+for owner in configuration.owners:
+    admins.edit.append(owner)
 
 bot.infinity_polling()
