@@ -23,11 +23,7 @@ screen -dmS bells python3 main.py
 **/get_timetable** - Расписание звонков 
 Планы: Доделать корпус, починить LCD (возможно, поменять), поменять экран на 4-х строчный, добавить конфигуратор, отрефакторить
 
-Для администраторов доступны команды:
-# Beller
-A powerful telegram bot that provides a convenient interface for ring controlling at schools
-
-# Commands (in Russian)
+Для администраторов доступны команды
 
 **/get_timetable** - Расписание звонков 
 
