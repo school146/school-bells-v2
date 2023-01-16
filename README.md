@@ -5,7 +5,6 @@
 Проект: Служба Звонков (ru) и BridgeBell (en)
 
 ## Запуск
-Роли: Василий Гайсен - программист, Федор Жаков - программист и hardware-щик, Демьян Бажин - генератор идей, Кирилла Райзих - копирайтер, Дарья Степанова - дизайн
 
 ```git clone https://github.com/school146/school-bells-v2/
 pip3 install pyTelegramBotApi
