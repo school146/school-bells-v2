@@ -9,10 +9,9 @@
 
 ## Запуск
 
-```git clone https://github.com/school146/school-bells-v2/
-pip3 install pyTelegramBotApi
-pip3 install smbus2
-pip3 install sqlite3
+```
+git clone https://github.com/school146/school-bells-v2/
+pip install -r requirements.txt
 export BELLER_TOKEN=токен_своего_бота
 screen -dmS bells python3 main.py
 ```
