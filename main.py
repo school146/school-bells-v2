@@ -42,7 +42,7 @@ def exec(message):
 @bot.message_handler(commands=["set_status"])
 def set_status(message):
     if (admins.validator.check(message)):
-        configuration.status = message.text[8:]
+        configuration.status = message.text[11:]
 #       print(overAllStatus)
 #       print(subprocess.check_output(message.text[5:].split()))
         bot.reply_to(message, '✅ Статус поменян')
@@ -77,7 +77,7 @@ def ring(message):
     if admins.validator.check(message):
         duration = configuration.ring_duration
         try:
-            if message.text != '/ring': duration = int(message.text.split()[1])
+            if message.text != '/ring': duration = float(message.text.split()[1])
         except: bot.reply_to(message, 'Неверный аргумент')
         daemon.instant_ring(duration)
         # log_sucessful_ring(message.from_user.username)

@@ -1,9 +1,11 @@
 import subprocess
+import os
 
 def get_cpu_temp():
-    try:
-        return str(subprocess.check_output('cat /sys/class/thermal/thermal_zone*/temp'.split()))
-    except: return '2.000.000 °С'
+    tempfile = open('/sys/class/thermal/thermal_zone0/temp')
+    cpu_temp = tempfile.read()
+    tempfile.close()
+    return float(cpu_temp) / 1000
 
 def get_uptime():
     try:

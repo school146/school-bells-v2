@@ -20,14 +20,15 @@ class Daemon(threading.Thread):
     next_called_timing: str = '00:00'
     gpio_mode = False
     debugger : telebot.TeleBot
-
+    day: int
     status: bool = True
 
     def __init__(self, table, muted):
         super().__init__()
         self.daemon = True
         self.update(table, muted)
-        
+        self.day = datetime.now().day
+
         if (os.system('echo 1 > /sys/class/gpio10/value && echo 0 > /sys/class/gpio10/value') == 0):
             self.gpio_mode = True
         
@@ -55,6 +56,10 @@ class Daemon(threading.Thread):
             time.sleep(1)
             timing = str(datetime.now().time())[:5]
             timing_forward = timetable.utils.sum_times(timing, configuration.pre_ring_delta)
+
+            if (timing == '00:00' and datetime.now().day != self.day): 
+                self.update(*timetable.getting.get_time(datetime.now()))
+                self.day = datetime.now().day
 
             if (timing in self.today_timetable and timing != self.last_called_timing):
                 self.order += 1
@@ -91,7 +96,7 @@ class Daemon(threading.Thread):
                     for id in configuration.debug_info_receivers:
                         self.debugger.send_message(id, '⏰ Сегодня больше нет звонков')
                 
-                if self.order + 1 != len(self.today_timetable) - 1:
+                if self.order + 1 <= len(self.today_timetable) - 1:
                     if self.today_timetable[self.order+1] == self.today_timetable[self.order]:
                         try: displaying.LCD_2004.next(self.today_timetable, self.order+1)
                         except: print("[GPIO] .next")
