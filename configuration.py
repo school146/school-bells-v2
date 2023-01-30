@@ -2,7 +2,7 @@ import sqlite3
 
 connection = sqlite3.connect('database.db', check_same_thread=False)
 owners = ['ncinsli', 'xfx1337']
-debug_info_receivers = ['399445674', '891078895']
+debug_info_receivers = set(['399445674', '891078895'])
 
 time_table_name = 'bells'
 overrided_time_table_name = 'bell_overrides'

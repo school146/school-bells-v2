@@ -12,3 +12,12 @@ def contains(id: str) -> bool:
     connection.commit()
 
     return content is not None
+
+def get():
+    cursor = connection.cursor()
+    cursor.execute(f"SELECT * FROM {table}")
+    content = cursor.fetchall()
+    connection.commit()
+
+    content = [c[0] for c in content]
+    return content

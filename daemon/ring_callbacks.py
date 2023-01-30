@@ -2,11 +2,14 @@ import os
 from telebot import *
 from termcolor import colored
 import datetime
+import logging 
 
 duration = 3000 #Config
 port = 10
 
 def init():
+    logging.getLogger().warning(f'Initializing: echo {port} > /sys/class/gpio/export | echo out > /sys/class/gpio/gpio{port}/direction')
+
     os.system(f'echo {port} > /sys/class/gpio/export')
     os.system(f'echo out > /sys/class/gpio/gpio{port}/direction')
 

@@ -1,6 +1,7 @@
 try: import displaying.LCD_2004
 except: pass
 
+import logging
 import threading
 import os
 import daemon.utils as utils
@@ -28,9 +29,10 @@ class Daemon(threading.Thread):
         self.daemon = True
         self.update(table, muted)
         self.day = datetime.now().day
-
         if (os.system('echo 1 > /sys/class/gpio10/value && echo 0 > /sys/class/gpio10/value') == 0):
             self.gpio_mode = True
+
+        logging.getLogger().info(f'GPIO_MODE: {self.gpio_mode}')
         
         ring_callbacks.init()
         self.update_ring_order()
@@ -40,6 +42,7 @@ class Daemon(threading.Thread):
 
     def update_ring_order(self):
         self.order = utils.nearest_forward_ring_index(self.today_timetable)
+        logging.getLogger().info(f'Updated ring order to: {self.order}')
 
     def update(self, new_timetable, new_muted):
         self.today_timetable, self.muted_rings = new_timetable, new_muted # Обращаться к sqlite из другого потока нельзя
@@ -48,8 +51,9 @@ class Daemon(threading.Thread):
         try: displaying.LCD_2004.update(self.today_timetable, self.order, self.next_called_timing)
         except: print("[GPIO] .update")
 
-        print(colored('[DAEMON] ', 'blue') + "Updated timetable:", self.today_timetable)
-        print(colored('[DAEMON] ', 'blue') + "Updated muted list:", *self.muted_rings)
+        timetable_str = str(self.today_timetable).replace("'", "")
+        logging.getLogger().info(f'Updated timetable: {timetable_str}')
+        logging.getLogger().info(f'Updated muted list: {str(self.muted_rings)}')
 
     def run(self):
         while self.status:
@@ -65,17 +69,24 @@ class Daemon(threading.Thread):
                 self.order += 1
 
                 self.order = self.today_timetable.index(str(datetime.now().time())[:5])
+                logging.getLogger().info(f'It is an event: order is now {self.order}')
 
                 if self.muted_rings[self.order] == 0:
+                    logging.getLogger().warn(f'Started ring for {configuration.ring_duration} seconds')
+                    
                     ring_callbacks.start_ring()
+                    time.sleep(configuration.ring_duration)
+                    ring_callbacks.stop_ring()
+
+                    logging.getLogger().warn(f'Stopped ring')
+
+                    self.last_called_timing = timing
+
                     for id in configuration.debug_info_receivers:
                         self.debugger.send_message(id, '🛎️  Звонок по расписанию успешно подан')
 
-                    self.last_called_timing = timing
-                    time.sleep(configuration.ring_duration)
-                    ring_callbacks.stop_ring()
                 else:
-                    print(f'No ring (muted ring at {timing})')
+                    logging.getLogger().warn(f'No ring (muted)')
                     self.last_called_timing = timing
                     for id in configuration.debug_info_receivers:
                         self.debugger.send_message(id, '🚫 Звонок по расписанию заглушен и не подан')
@@ -95,7 +106,9 @@ class Daemon(threading.Thread):
 
                     for id in configuration.debug_info_receivers:
                         self.debugger.send_message(id, '⏰ Сегодня больше нет звонков')
-                
+                    
+                    logging.getLogger().warn(f'No more rings')
+
                 if self.order + 1 <= len(self.today_timetable) - 1:
                     if self.today_timetable[self.order+1] == self.today_timetable[self.order]:
                         try: displaying.LCD_2004.next(self.today_timetable, self.order+1)
@@ -107,25 +120,34 @@ class Daemon(threading.Thread):
                 if self.order % 2 != 0: continue
 
                 if self.muted_rings[self.order] == 0:
+                    logging.getLogger().warn(f'Started pre-ring for {configuration.pre_ring_duration} seconds')
+
                     ring_callbacks.start_pre_ring()
+                    time.sleep(configuration.pre_ring_duration)
+                    ring_callbacks.stop_ring()
+                    
+                    logging.getLogger().warn(f'Stopped pre-ring')
 
                     for id in configuration.debug_info_receivers:
                         self.debugger.send_message(id, '🧨  Предзвонок по расписанию успешно подан')
 
                     self.last_called_timing = timing
-                    time.sleep(configuration.pre_ring_duration)
-                    ring_callbacks.stop_ring()
-                    self.last_called_timing = timing
                 else:
                     print(f'No prering (muted ring at {timing})')
+                    logging.getLogger().warn(f'No pre-ring (muted)')
                     self.last_called_timing = timing
 
         try: displaying.LCD_2004.next(self.next_called_timing)
         except: print("[GPIO] .next")
 
     def instant_ring(self, duration: float):
+        logging.getLogger().warn(f'Started ring for {duration if duration <= configuration.max_ring_duration else configuration.max_ring_duration} seconds')
+
         ring_callbacks.start_ring()
-        for id in configuration.debug_info_receivers:
-            self.debugger.send_message(id, '🛎️  Ручной звонок успешно подан')
         time.sleep(duration if duration <= configuration.max_ring_duration else configuration.max_ring_duration)
         ring_callbacks.stop_ring()
+
+        logging.getLogger().warn(f'Stopped pre-ring')
+
+        for id in configuration.debug_info_receivers:
+            self.debugger.send_message(id, '🛎️  Ручной звонок успешно подан')
