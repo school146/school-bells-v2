@@ -22,7 +22,9 @@ import timetable.getting
 import timetable.setting
 import timetable.muting 
 
-logging.basicConfig(level=logging.INFO, filemode='w', filename=os.path.join('logs', f'{datetime.now().strftime("%a %d %b %Y %H;%M;%S")}.log'), format='[%(asctime)s] [%(levelname)s] %(message)s')
+log_filename = os.path.join('logs', f'{datetime.now().strftime("%a %d %b %Y %H;%M;%S")}.log')
+
+logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler(log_filename), logging.StreamHandler(sys.stdout)], format='[%(asctime)s] [%(levelname)s] %(message)s')
 
 token = os.environ["BELLER_TOKEN"]
 bot = TeleBot(token)
