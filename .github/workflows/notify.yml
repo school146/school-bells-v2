@@ -1,0 +1,11 @@
+on:
+  push: 
+    branches:
+    - release
+    
+jobs:
+  notify:
+    name: Notify the server
+    runs-on: self-hosted
+    steps:
+      - run: bash ~/notify.sh
